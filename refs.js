@@ -16,18 +16,25 @@ ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
 	this.panel = new OO.ui.PanelLayout( { $: this.$, padded: true, expanded: false });
-	this.content = new OO.ui.FieldsetLayout( { $: this.$ } );
 
-	this.urlInput = new OO.ui.TextInputWidget( { $: this.$ } );
-	this.field = new OO.ui.FieldLayout( this.urlInput, {
-		$: this.$,
-		label: 'Url',
-		align: 'top'
-	});
+	this.fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } );
 
-	this.content.addItems( [ this.field ] );
+	this.fieldSetLayout.addItems( [
+		new OO.ui.ActionFieldLayout(
+			new OO.ui.TextInputWidget( {
+				placeholder: 'Enter url'
+			} ),
+			new OO.ui.ButtonWidget( {
+				'label': 'Generate'
+			} ),
+			{
+				'label': 'Url',
+				'align': 'top'
+			}
+		)
+	] );
 
-	this.panel.$element.append( this.content.$element );
+	this.panel.$element.append( this.fieldSetLayout.$element );
 	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
 
 	this.$body.append( this.panel.$element );
