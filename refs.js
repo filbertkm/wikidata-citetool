@@ -2,6 +2,8 @@
 
 function ReferenceDialog( template, config ) {
 	ReferenceDialog.super.call( this, config );
+
+	this.template = template;
 }
 
 OO.inheritClass( ReferenceDialog, OO.ui.ProcessDialog );
@@ -19,17 +21,22 @@ ReferenceDialog.prototype.initialize = function() {
 
 	this.fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } );
 
+	this.lookupInput = new OO.ui.TextInputWidget( {
+		placeholder: 'Enter url'
+	} );
+
+	this.generateButton = new OO.ui.ButtonWidget( {
+		'label': 'Generate'
+	} );
+
+	this.generateButton.connect( this, { click: 'onGenerateButtonClick' } );
+
 	this.fieldSetLayout.addItems( [
 		new OO.ui.ActionFieldLayout(
-			new OO.ui.TextInputWidget( {
-				placeholder: 'Enter url'
-			} ),
-			new OO.ui.ButtonWidget( {
-				'label': 'Generate'
-			} ),
+			this.lookupInput,
+			this.generateButton,
 			{
-				'label': 'Url',
-				'align': 'top'
+				label: 'Url',
 			}
 		)
 	] );
@@ -38,6 +45,10 @@ ReferenceDialog.prototype.initialize = function() {
 	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
 
 	this.$body.append( this.panel.$element );
+};
+
+ReferenceDialog.prototype.onGenerateButtonClick = function( e ) {
+	this.executeAction( 'lookup' );
 };
 
 ReferenceDialog.prototype.getSetupProcess = function( data ) {
@@ -52,15 +63,42 @@ ReferenceDialog.prototype.getSetupProcess = function( data ) {
 ReferenceDialog.prototype.getActionProcess = function( action ) {
 	var dialog = this;
 
-	if ( action === 'save' ) {
+	if ( action === 'lookup' ) {
+		this.doLookup( this.lookupInput.getValue() );
+	} else if ( action === 'save' ) {
 		return new OO.ui.Process( function() {
-			// dialog.close( { action: action } );
-			console.log( this.urlInput.getValue() );
+			console.log( this.lookupInput.getValue() );
 		}, this );
 	}
 
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
 };
+
+ReferenceDialog.prototype.doLookup = function( urlValue ) {
+	var self = this;
+
+	$.ajax( {
+		method: 'GET',
+		url: 'http://localhost:1970/api',
+		data: {
+			action: 'query',
+			format: 'mediawiki',
+			search: urlValue,
+			basefields: true
+		}
+	} )
+	.done( function( res ) {
+		self.fieldSetLayout.addItems( [
+			new OO.ui.FieldLayout(
+				new OO.ui.TextInputWidget( {
+					value: res[0].title
+				} ), {
+					label: 'Title'
+				}
+			)
+		] );
+	} );
+}
 
 function init() {
 	$( '#mw-content-text' ).on( 'click', '.wikibase-statementview-references .wikibase-toolbar-button-add a', function() {
