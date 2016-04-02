@@ -28,6 +28,8 @@ ReferenceDialog.prototype.getBodyHeight = function() {
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
+	var self = this;
+
 	this.panel = new OO.ui.PanelLayout( {
 		$: this.$,
 		padded: true,
@@ -41,19 +43,23 @@ ReferenceDialog.prototype.initialize = function() {
 	} );
 
 	this.generateButton = new OO.ui.ButtonWidget( {
-		'label': 'Generate'
+		label: 'Generate'
 	} );
 
 	this.generateButton.connect( this, { click: 'onGenerateButtonClick' } );
 
-	this.fieldSetLayout.addItems( [
-		new OO.ui.FieldLayout(
-			this.lookupInput,
-			{
-				label: 'Url',
-			}
-		)
-	] );
+	this.lookupLabel( 'P46' ).done( function( labelData ) {
+		self.fieldSetLayout.addItems( [
+			new OO.ui.FieldLayout(
+				self.lookupInput,
+				{
+					label: labelData.entities['P46'].labels.en.value
+				}
+			)
+		] );
+
+		self.updateSize();
+	} );
 
 	this.panel.$element.append( this.fieldSetLayout.$element );
 	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
@@ -97,24 +103,43 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 			basefields: true
 		}
 	} )
-	.done( function( res ) {
-		self.fieldSetLayout.addItems( [
-			new OO.ui.FieldLayout(
-				new OO.ui.TextInputWidget( {
-					value: res[0].title
-				} ), {
-					label: 'Title'
-				}
-			)
-		] );
+	.done( function( citoidData ) {
+		self.lookupLabel( 'P78' ).done( function( labelData ) {
+			self.fieldSetLayout.addItems( [
+				new OO.ui.FieldLayout(
+					new OO.ui.TextInputWidget( {
+						value: citoidData[0].title
+					} ), {
+						label: labelData.entities['P78'].labels.en.value
+					}
+				)
+			] );
 
-		self.updateSize();
+			self.updateSize();
+		} );
 	} );
 }
 
+ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
+	var baseURI = 'http://wikidatawiki/w/api.php',
+		params = {
+			action: 'wbgetentities',
+			ids: entityIds,
+			props: 'labels',
+			format: 'json'
+		};
+
+	return $.ajax( {
+		url: baseURI,
+		data: params,
+		dataType: 'jsonp',
+		jsonp: 'callback'
+	} );
+};
+
 function init() {
 	var $lookupLink = $( '<a>' )
-		.text( 'lookup' )
+		.text( 'lookup reference' )
 		.attr( {
 			href: '#'
 		} )
@@ -137,9 +162,9 @@ function init() {
 			} );
 		} );
 
-    var $lookupSpan = $( '<span>' )
-        .attr( { 'class': 'wikibase-toolbar-button' } )
-        .css( { 'margin-left': '.3em' } )
+	var $lookupSpan = $( '<span>' )
+		.attr( { 'class': 'wikibase-toolbar-button' } )
+		.css( { 'margin-left': '.4em' } )
 		.append( $lookupLink );
 
 	$( '.wikibase-statementview-references .wikibase-addtoolbar-container' ).append( $lookupSpan );
