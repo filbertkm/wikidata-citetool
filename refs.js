@@ -113,12 +113,11 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 }
 
 function init() {
-	var $lookupSpan = $( '<span>' )
-		.attr( { 'class': 'wikibase-toolbar-button' } )
-		.css( { 'margin-left': '.5em' } );
-
 	var $lookupLink = $( '<a>' )
 		.text( 'lookup' )
+		.attr( {
+			href: '#'
+		} )
 		.on( 'click', function( e ) {
 			e.preventDefault();
 
@@ -138,7 +137,10 @@ function init() {
 			} );
 		} );
 
-	$lookupSpan.append( $lookupLink );
+    var $lookupSpan = $( '<span>' )
+        .attr( { 'class': 'wikibase-toolbar-button' } )
+        .css( { 'margin-left': '.3em' } )
+		.append( $lookupLink );
 
 	$( '.wikibase-statementview-references .wikibase-addtoolbar-container' ).append( $lookupSpan );
 }
