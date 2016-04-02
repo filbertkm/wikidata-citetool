@@ -170,6 +170,8 @@ function init() {
 	$( '.wikibase-statementview-references .wikibase-addtoolbar-container' ).append( $lookupSpan );
 }
 
-$( init );
+$( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
+	$( init );
+} );
 
 }( mediaWiki, jQuery ) );
