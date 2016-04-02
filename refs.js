@@ -10,14 +10,29 @@ OO.inheritClass( ReferenceDialog, OO.ui.ProcessDialog );
 
 ReferenceDialog.static.title = 'Add a reference';
 ReferenceDialog.static.actions = [
-	{ action: 'save', label: 'Save', flags: 'primary' },
-	{ label: 'Cancel', flags: 'safe'}
+	{
+		action: 'generate',
+		label: 'Generate',
+		flags: 'primary'
+	},
+	{
+		label: 'Cancel',
+		flags: 'safe'
+	}
 ];
+
+ReferenceDialog.prototype.getBodyHeight = function() {
+	return this.panel.$element.outerHeight( true );
+};
 
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
-	this.panel = new OO.ui.PanelLayout( { $: this.$, padded: true, expanded: false });
+	this.panel = new OO.ui.PanelLayout( {
+		$: this.$,
+		padded: true,
+		expanded: false
+	} );
 
 	this.fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } );
 
@@ -32,9 +47,8 @@ ReferenceDialog.prototype.initialize = function() {
 	this.generateButton.connect( this, { click: 'onGenerateButtonClick' } );
 
 	this.fieldSetLayout.addItems( [
-		new OO.ui.ActionFieldLayout(
+		new OO.ui.FieldLayout(
 			this.lookupInput,
-			this.generateButton,
 			{
 				label: 'Url',
 			}
@@ -48,7 +62,7 @@ ReferenceDialog.prototype.initialize = function() {
 };
 
 ReferenceDialog.prototype.onGenerateButtonClick = function( e ) {
-	this.executeAction( 'lookup' );
+	this.executeAction( 'generate' );
 };
 
 ReferenceDialog.prototype.getSetupProcess = function( data ) {
@@ -63,12 +77,8 @@ ReferenceDialog.prototype.getSetupProcess = function( data ) {
 ReferenceDialog.prototype.getActionProcess = function( action ) {
 	var dialog = this;
 
-	if ( action === 'lookup' ) {
+	if ( action === 'generate' ) {
 		this.doLookup( this.lookupInput.getValue() );
-	} else if ( action === 'save' ) {
-		return new OO.ui.Process( function() {
-			console.log( this.lookupInput.getValue() );
-		}, this );
 	}
 
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
@@ -97,26 +107,40 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 				}
 			)
 		] );
+
+		self.updateSize();
 	} );
 }
 
 function init() {
-	$( '#mw-content-text' ).on( 'click', '.wikibase-statementview-references .wikibase-toolbar-button-add a', function() {
-		$( '.wikibase-referenceview-new' ).css( {'display': 'none'});
+	var $lookupSpan = $( '<span>' )
+		.attr( { 'class': 'wikibase-toolbar-button' } )
+		.css( { 'margin-left': '.5em' } );
 
-		$.getJSON( 'http://wikidatawiki/scripts/template.json', function( template ) {
-			var windowManager = new OO.ui.WindowManager();
+	var $lookupLink = $( '<a>' )
+		.text( 'lookup' )
+		.on( 'click', function( e ) {
+			e.preventDefault();
 
-			$( 'body' ).append( windowManager.$element );
+			$( '.wikibase-referenceview-new' ).css( { 'display': 'none' } );
 
-			var referenceDialog = new ReferenceDialog( template, {
-				size: 'medium'
-			});
+			$.getJSON( 'http://wikidatawiki/scripts/template.json', function( template ) {
+				var windowManager = new OO.ui.WindowManager();
 
-			windowManager.addWindows( [ referenceDialog ] );
-			windowManager.openWindow( referenceDialog );
-		});
-	});
+				$( 'body' ).append( windowManager.$element );
+
+				var referenceDialog = new ReferenceDialog( template, {
+					size: 'large'
+				} );
+
+				windowManager.addWindows( [ referenceDialog ] );
+				windowManager.openWindow( referenceDialog );
+			} );
+		} );
+
+	$lookupSpan.append( $lookupLink );
+
+	$( '.wikibase-statementview-references .wikibase-addtoolbar-container' ).append( $lookupSpan );
 }
 
 $( init );
