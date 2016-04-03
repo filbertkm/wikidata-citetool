@@ -13,11 +13,19 @@ ReferenceDialog.static.actions = [
 	{
 		action: 'generate',
 		label: 'Generate',
-		flags: 'primary'
+		flags: [ 'primary', 'constructive' ],
+		modes: [ 'form' ]
+	},
+	{
+		action: 'save',
+		label: 'Save',
+		flags: [ 'primary', 'constructive' ],
+		modes: [ 'result' ]
 	},
 	{
 		label: 'Cancel',
-		flags: 'safe'
+		flags: 'safe',
+		modes: [ 'form', 'result' ]
 	}
 ];
 
@@ -28,7 +36,6 @@ ReferenceDialog.prototype.getBodyHeight = function() {
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
-	this.mode = 'form';
 	this._buildFormPanel();
 
 	this.stack = new OO.ui.StackLayout( {
@@ -81,7 +88,8 @@ ReferenceDialog.prototype.getSetupProcess = function( data ) {
 
 	return ReferenceDialog.super.prototype.getSetupProcess.call( this, data )
 		.next( function() {
-			// @todo
+			this.setModePanel( 'form' );
+			this.actions.setMode( 'form' );
 		}, this );
 };
 
@@ -90,12 +98,13 @@ ReferenceDialog.prototype.getActionProcess = function( action ) {
 
 	if ( action === 'generate' ) {
 		this.doLookup( this.lookupInput.getValue() );
-		this.mode = 'result';
-
-
 	}
 
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
+};
+
+ReferenceDialog.prototype.setModePanel = function ( panelName, processPanelName, fromSelect ) {
+	this.stack.setItem( this.panel );
 };
 
 ReferenceDialog.prototype.doLookup = function( urlValue ) {
@@ -130,6 +139,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 					)
 				] );
 
+				self.actions.setMode( 'result' );
 				self.updateSize();
 			} );
 		} );
