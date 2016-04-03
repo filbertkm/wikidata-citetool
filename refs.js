@@ -1,9 +1,10 @@
 ( function( wb, mw, $ ) {
 
-function ReferenceDialog( template, config ) {
+function ReferenceDialog( template, guid, config ) {
 	ReferenceDialog.super.call( this, config );
 
 	this.template = template;
+	this.guid = guid;
 }
 
 OO.inheritClass( ReferenceDialog, OO.ui.ProcessDialog );
@@ -115,7 +116,6 @@ ReferenceDialog.prototype.getActionProcess = function( action ) {
 };
 
 ReferenceDialog.prototype.setModePanel = function( panelName ) {
-	console.log( panelName );
 	this.stack.setItem( this.panels[panelName] );
 };
 
@@ -136,6 +136,8 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	.then( function( citoidData ) {
 		self.data = citoidData;
 
+		console.log( citoidData );
+
 		$.each( citoidData[0], function( key, value ) {
 			if ( !self.template[key] ) {
 				return;
@@ -145,7 +147,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 
 			self.lookupLabel( entityId ).done( function( labelData ) {
 				var $result = $( '<div>'
-					+ labelData.entities[entityId].labels.en.value + ': ' + citoidData[0].title
+					+ labelData.entities[entityId].labels.en.value + ': ' + value
 				 	+ '</div>'
 				);
 
@@ -196,18 +198,30 @@ function init() {
 
 			$( '.wikibase-referenceview-new' ).css( { 'display': 'none' } );
 
-			$.getJSON( 'http://wikidatawiki/scripts/template.json', function( template ) {
-				var windowManager = new OO.ui.WindowManager();
+			var $statement = e.target.closest( '.wikibase-statementview' ),
+				classes = $statement.getAttribute( 'class' ).split( ' ' ),
+				guid = null;
 
-				$( 'body' ).append( windowManager.$element );
-
-				var referenceDialog = new ReferenceDialog( template, {
-					size: 'large'
-				} );
-
-				windowManager.addWindows( [ referenceDialog ] );
-				windowManager.openWindow( referenceDialog );
+			$.each( classes, function( key, value ) {
+				if ( value.indexOf( "wikibase-statement-Q" ) == 0 ) {
+					guid = value.substring( 19 );
+				}
 			} );
+
+			if ( guid !== null ) {
+				$.getJSON( 'http://wikidatawiki/scripts/template.json', function( template ) {
+					var windowManager = new OO.ui.WindowManager();
+
+					$( 'body' ).append( windowManager.$element );
+
+					var referenceDialog = new ReferenceDialog( template, guid, {
+						size: 'large'
+					} );
+
+					windowManager.addWindows( [ referenceDialog ] );
+					windowManager.openWindow( referenceDialog );
+				} );
+			}
 		} );
 
 	var $lookupSpan = $( '<span>' )
