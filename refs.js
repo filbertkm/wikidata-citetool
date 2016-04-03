@@ -94,10 +94,12 @@ ReferenceDialog.prototype.getSetupProcess = function( data ) {
 };
 
 ReferenceDialog.prototype.getActionProcess = function( action ) {
-	var dialog = this;
+	var self = this;
 
 	if ( action === 'generate' ) {
-		this.doLookup( this.lookupInput.getValue() );
+		return new OO.ui.Process( function () {
+			return self.doLookup( self.lookupInput.getValue() );
+		} );
 	}
 
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
@@ -110,7 +112,7 @@ ReferenceDialog.prototype.setModePanel = function ( panelName, processPanelName,
 ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	var self = this;
 
-	$.ajax( {
+	return $.ajax( {
 		method: 'GET',
 		url: 'http://localhost:1970/api',
 		data: {
@@ -120,7 +122,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 			basefields: true
 		}
 	} )
-	.done( function( citoidData ) {
+	.then( function( citoidData ) {
 		$.each( citoidData[0], function( key, value ) {
 			if ( !self.template[key] ) {
 				return;
