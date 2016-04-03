@@ -114,16 +114,18 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 
 	return $.ajax( {
 		method: 'GET',
-		url: 'http://localhost:1970/api',
+		url: 'https://citoid.wikimedia.org/api',
 		data: {
 			action: 'query',
 			format: 'mediawiki',
 			search: urlValue,
-			basefields: true
+			basefields: true,
+			jsonp: true
 		}
 	} )
 	.then( function( citoidData ) {
 		$.each( citoidData[0], function( key, value ) {
+			console.log( citoidData );
 			if ( !self.template[key] ) {
 				return;
 			}
