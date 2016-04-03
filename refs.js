@@ -29,10 +29,6 @@ ReferenceDialog.static.actions = [
 	}
 ];
 
-ReferenceDialog.prototype.getBodyHeight = function() {
-	return this.panel.$element.outerHeight( true );
-};
-
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
@@ -48,7 +44,8 @@ ReferenceDialog.prototype.initialize = function() {
 
 	this.stack = new OO.ui.StackLayout( {
 		items: [ this.panel, this.resultPanel ],
-		classes: [ 'container' ]
+		classes: [ 'container' ],
+		expanded: false
 	} );
 
 	this.$body.append( this.stack.$element );
@@ -87,7 +84,7 @@ ReferenceDialog.prototype._buildResultPanel = function() {
 		classes: [ 'refdialog-panel-result' ],
 		padded: true,
 		scrollable: true,
-		expanded: true
+		expanded: false
 	} );
 };
 
@@ -117,7 +114,7 @@ ReferenceDialog.prototype.getActionProcess = function( action ) {
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
 };
 
-ReferenceDialog.prototype.setModePanel = function( panelName, processPanelName, fromSelect ) {
+ReferenceDialog.prototype.setModePanel = function( panelName ) {
 	console.log( panelName );
 	this.stack.setItem( this.panels[panelName] );
 };
