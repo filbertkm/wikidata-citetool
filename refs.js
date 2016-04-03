@@ -1,4 +1,4 @@
-( function( mw, $ ) {
+( function( wb, mw, $ ) {
 
 function ReferenceDialog( template, config ) {
 	ReferenceDialog.super.call( this, config );
@@ -11,10 +11,10 @@ OO.inheritClass( ReferenceDialog, OO.ui.ProcessDialog );
 ReferenceDialog.static.title = 'Add a reference';
 ReferenceDialog.static.actions = [
 	{
-		action: 'generate',
-		label: 'Generate',
+		action: 'lookup',
+		label: 'Lookup',
 		flags: [ 'primary', 'constructive' ],
-		modes: [ 'form' ]
+		modes: [ 'lookup' ]
 	},
 	{
 		action: 'save',
@@ -25,7 +25,7 @@ ReferenceDialog.static.actions = [
 	{
 		label: 'Cancel',
 		flags: 'safe',
-		modes: [ 'form', 'result' ]
+		modes: [ 'lookup', 'result' ]
 	}
 ];
 
@@ -36,10 +36,18 @@ ReferenceDialog.prototype.getBodyHeight = function() {
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
+	this.data = null;
+
 	this._buildFormPanel();
+	this._buildResultPanel();
+
+	this.panels = {
+		lookup: this.panel,
+		result: this.resultPanel
+	}
 
 	this.stack = new OO.ui.StackLayout( {
-		items: [ this.panel ],
+		items: [ this.panel, this.resultPanel ],
 		classes: [ 'container' ]
 	} );
 
@@ -51,7 +59,7 @@ ReferenceDialog.prototype._buildFormPanel = function() {
 		$: this.$,
 		padded: true,
 		expanded: false,
-		classes: [ 'refdialog-panel-form' ]
+		classes: [ 'refdialog-panel-lookup' ]
 	} );
 
 	this.fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } );
@@ -59,12 +67,6 @@ ReferenceDialog.prototype._buildFormPanel = function() {
 	this.lookupInput = new OO.ui.TextInputWidget( {
 		placeholder: 'Enter url'
 	} );
-
-	this.generateButton = new OO.ui.ButtonWidget( {
-		label: 'Generate'
-	} );
-
-	this.generateButton.connect( this, { click: 'onGenerateButtonClick' } );
 
 	this.fieldSetLayout.addItems( [
 		new OO.ui.FieldLayout(
@@ -79,8 +81,14 @@ ReferenceDialog.prototype._buildFormPanel = function() {
 	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
 };
 
-ReferenceDialog.prototype.onGenerateButtonClick = function( e ) {
-	this.executeAction( 'generate' );
+ReferenceDialog.prototype._buildResultPanel = function() {
+	this.resultPanel = new OO.ui.PanelLayout( {
+		$content: $( '<h3>Result</h3>' ),
+		classes: [ 'refdialog-panel-result' ],
+		padded: true,
+		scrollable: true,
+		expanded: true
+	} );
 };
 
 ReferenceDialog.prototype.getSetupProcess = function( data ) {
@@ -88,25 +96,30 @@ ReferenceDialog.prototype.getSetupProcess = function( data ) {
 
 	return ReferenceDialog.super.prototype.getSetupProcess.call( this, data )
 		.next( function() {
-			this.setModePanel( 'form' );
-			this.actions.setMode( 'form' );
+			this.setModePanel( 'lookup' );
+			this.actions.setMode( 'lookup' );
 		}, this );
 };
 
 ReferenceDialog.prototype.getActionProcess = function( action ) {
 	var self = this;
 
-	if ( action === 'generate' ) {
+	if ( action === 'lookup' ) {
 		return new OO.ui.Process( function () {
 			return self.doLookup( self.lookupInput.getValue() );
+		} );
+	} else if ( action === 'save' ) {
+		return new OO.ui.Process( function() {
+			return self.saveReference();
 		} );
 	}
 
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
 };
 
-ReferenceDialog.prototype.setModePanel = function ( panelName, processPanelName, fromSelect ) {
-	this.stack.setItem( this.panel );
+ReferenceDialog.prototype.setModePanel = function( panelName, processPanelName, fromSelect ) {
+	console.log( panelName );
+	this.stack.setItem( this.panels[panelName] );
 };
 
 ReferenceDialog.prototype.doLookup = function( urlValue ) {
@@ -124,8 +137,9 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 		}
 	} )
 	.then( function( citoidData ) {
+		self.data = citoidData;
+
 		$.each( citoidData[0], function( key, value ) {
-			console.log( citoidData );
 			if ( !self.template[key] ) {
 				return;
 			}
@@ -133,22 +147,29 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 			var entityId = self.template[key];
 
 			self.lookupLabel( entityId ).done( function( labelData ) {
-				self.fieldSetLayout.addItems( [
-					new OO.ui.FieldLayout(
-						new OO.ui.TextInputWidget( {
-							value: citoidData[0].title
-						} ), {
-							label: labelData.entities[entityId].labels.en.value
-						}
-					)
-				] );
+				var $result = $( '<div>'
+					+ labelData.entities[entityId].labels.en.value + ': ' + citoidData[0].title
+				 	+ '</div>'
+				);
+
+				self.resultPanel.$element.append( $result );
 
 				self.actions.setMode( 'result' );
+				self.setModePanel( 'result' );
 				self.updateSize();
 			} );
 		} );
 	} );
-}
+};
+
+ReferenceDialog.prototype.saveReference = function() {
+	var api = new wb.api.RepoApi( new mw.Api() );
+
+	return api.parseValue( 'time', [ '2014-08-11' ], {} )
+		.then( function( res ) {
+			console.log( res );
+		} );
+};
 
 ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 	var baseURI = 'http://wikidatawiki/w/api.php',
@@ -204,4 +225,4 @@ $( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
 	$( init );
 } );
 
-}( mediaWiki, jQuery ) );
+}( wikibase, mediaWiki, jQuery ) );
