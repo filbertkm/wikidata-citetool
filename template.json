@@ -1,4 +1,10 @@
 {
-  "title": "P78",
-  "url": "P46"
+  "title": {
+  	"id": "P78",
+	"valuetype": "monolingualtext"
+  },
+  "url": {
+  	"id": "P46",
+	"valuetype": "string"
+  }
 }

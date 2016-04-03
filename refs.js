@@ -1,10 +1,11 @@
 ( function( wb, mw, $ ) {
 
-function ReferenceDialog( template, guid, config ) {
+function ReferenceDialog( template, guid, baseRevId, config ) {
 	ReferenceDialog.super.call( this, config );
 
 	this.template = template;
 	this.guid = guid;
+	this.baseRevId = baseRevId;
 }
 
 OO.inheritClass( ReferenceDialog, OO.ui.ProcessDialog );
@@ -33,7 +34,8 @@ ReferenceDialog.static.actions = [
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
-	this.data = null;
+	this.citoidData = null;
+	this.snakData = {};
 
 	this._buildFormPanel();
 	this._buildResultPanel();
@@ -143,9 +145,11 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 				return;
 			}
 
-			var entityId = self.template[key];
+			var entityId = self.template[key]["id"];
 
 			self.lookupLabel( entityId ).done( function( labelData ) {
+				self.setSnakValue( self.template[key], value );
+
 				var $result = $( '<div>'
 					+ labelData.entities[entityId].labels.en.value + ': ' + value
 				 	+ '</div>'
@@ -161,10 +165,45 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	} );
 };
 
+ReferenceDialog.prototype.setSnakValue = function( template, value ) {
+	var propertyId = template["id"],
+		data = 	{
+			"snaktype": "value",
+			"property": propertyId,
+			"datavalue": this.getDataValue( template.valuetype, value )
+		};
+
+	this.snakData[propertyId] = [ data ];
+};
+
+ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
+	console.log( valuetype );
+	var data = {};
+
+	if ( valuetype === "monolingualtext" ) {
+		data = {
+			"type":"monolingualtext",
+			"value": {
+				"text": value,
+				"language": "en"
+			}
+		};
+
+		return data;
+	} else if ( valuetype === "string" ) {
+		data = {
+			"type": "string",
+			"value": value
+		};
+	}
+
+	return data;
+};
+
 ReferenceDialog.prototype.saveReference = function() {
 	var api = new wb.api.RepoApi( new mw.Api() );
 
-	return api.parseValue( 'time', [ '2014-08-11' ], {} )
+	return api.setReference( this.guid, this.snakData, this.baseRevId )
 		.then( function( res ) {
 			console.log( res );
 		} );
@@ -214,9 +253,14 @@ function init() {
 
 					$( 'body' ).append( windowManager.$element );
 
-					var referenceDialog = new ReferenceDialog( template, guid, {
-						size: 'large'
-					} );
+					var referenceDialog = new ReferenceDialog(
+						template,
+						guid,
+						mw.config.get( 'wgRevisionId' ),
+						{
+							size: 'large'
+						}
+					);
 
 					windowManager.addWindows( [ referenceDialog ] );
 					windowManager.openWindow( referenceDialog );
