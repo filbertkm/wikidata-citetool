@@ -28,12 +28,23 @@ ReferenceDialog.prototype.getBodyHeight = function() {
 ReferenceDialog.prototype.initialize = function() {
 	ReferenceDialog.super.prototype.initialize.apply( this, arguments );
 
-	var self = this;
+	this.mode = 'form';
+	this._buildFormPanel();
 
+	this.stack = new OO.ui.StackLayout( {
+		items: [ this.panel ],
+		classes: [ 'container' ]
+	} );
+
+	this.$body.append( this.stack.$element );
+};
+
+ReferenceDialog.prototype._buildFormPanel = function() {
 	this.panel = new OO.ui.PanelLayout( {
 		$: this.$,
 		padded: true,
-		expanded: false
+		expanded: false,
+		classes: [ 'refdialog-panel-form' ]
 	} );
 
 	this.fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } );
@@ -48,23 +59,17 @@ ReferenceDialog.prototype.initialize = function() {
 
 	this.generateButton.connect( this, { click: 'onGenerateButtonClick' } );
 
-	this.lookupLabel( 'P46' ).done( function( labelData ) {
-		self.fieldSetLayout.addItems( [
-			new OO.ui.FieldLayout(
-				self.lookupInput,
-				{
-					label: labelData.entities['P46'].labels.en.value
-				}
-			)
-		] );
-
-		self.updateSize();
-	} );
+	this.fieldSetLayout.addItems( [
+		new OO.ui.FieldLayout(
+			this.lookupInput,
+			{
+				label: 'URL'
+			}
+		)
+	] );
 
 	this.panel.$element.append( this.fieldSetLayout.$element );
 	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
-
-	this.$body.append( this.panel.$element );
 };
 
 ReferenceDialog.prototype.onGenerateButtonClick = function( e ) {
@@ -85,6 +90,9 @@ ReferenceDialog.prototype.getActionProcess = function( action ) {
 
 	if ( action === 'generate' ) {
 		this.doLookup( this.lookupInput.getValue() );
+		this.mode = 'result';
+
+
 	}
 
 	return ReferenceDialog.super.prototype.getActionProcess.call( this, action );
@@ -104,18 +112,26 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 		}
 	} )
 	.done( function( citoidData ) {
-		self.lookupLabel( 'P78' ).done( function( labelData ) {
-			self.fieldSetLayout.addItems( [
-				new OO.ui.FieldLayout(
-					new OO.ui.TextInputWidget( {
-						value: citoidData[0].title
-					} ), {
-						label: labelData.entities['P78'].labels.en.value
-					}
-				)
-			] );
+		$.each( citoidData[0], function( key, value ) {
+			if ( !self.template[key] ) {
+				return;
+			}
 
-			self.updateSize();
+			var entityId = self.template[key];
+
+			self.lookupLabel( entityId ).done( function( labelData ) {
+				self.fieldSetLayout.addItems( [
+					new OO.ui.FieldLayout(
+						new OO.ui.TextInputWidget( {
+							value: citoidData[0].title
+						} ), {
+							label: labelData.entities[entityId].labels.en.value
+						}
+					)
+				] );
+
+				self.updateSize();
+			} );
 		} );
 	} );
 }
