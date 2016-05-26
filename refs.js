@@ -1,10 +1,6 @@
 ( function( wb, mw, $ ) {
 
-if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0 && mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
-	return;
-}
-
-wb.ReferenceDialogLoader = {};
+ReferenceDialogLoader = {};
 
 function ReferenceDialog( template, guid, baseRevId, config ) {
 	ReferenceDialog.super.call( this, config );
@@ -144,8 +140,6 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	.then( function( citoidData ) {
 		self.data = citoidData;
 
-		console.log( citoidData );
-
 		$.each( citoidData[0], function( key, value ) {
 			if ( !self.template[key] ) {
 				return;
@@ -183,7 +177,6 @@ ReferenceDialog.prototype.setSnakValue = function( template, value ) {
 };
 
 ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
-	console.log( valuetype );
 	var data = {};
 
 	if ( valuetype === "monolingualtext" ) {
@@ -232,8 +225,11 @@ ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 	} );
 };
 
-wb.ReferenceDialogLoader.init = function( templateUrl ) {
-	console.log( 'init reference tool' );
+ReferenceDialogLoader.init = function( templateUrl ) {
+	if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0
+		&& mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
+	    return;
+	}
 
 	var $lookupLink = $( '<a>' )
 		.text( 'lookup reference' )
