@@ -1,5 +1,9 @@
 ( function( wb, mw, $ ) {
 
+if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0 && mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
+	return;
+}
+
 wb.ReferenceDialogLoader = {};
 
 function ReferenceDialog( template, guid, baseRevId, config ) {
