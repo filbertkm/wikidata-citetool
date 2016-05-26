@@ -233,6 +233,8 @@ ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 };
 
 wb.ReferenceDialogLoader.init = function( templateUrl ) {
+	console.log( 'init reference tool' );
+
 	var $lookupLink = $( '<a>' )
 		.text( 'lookup reference' )
 		.attr( {
