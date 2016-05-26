@@ -248,7 +248,7 @@ function init() {
 			} );
 
 			if ( guid !== null ) {
-				$.getJSON( 'http://wikidatawiki/scripts/template.json', function( template ) {
+				$.getJSON( 'https://rawgit.com/filbertkm/wikidata-refs/master/template.json', function( template ) {
 					var windowManager = new OO.ui.WindowManager();
 
 					$( 'body' ).append( windowManager.$element );
