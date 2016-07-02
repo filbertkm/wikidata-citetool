@@ -209,7 +209,7 @@ ReferenceDialog.prototype.saveReference = function() {
 };
 
 ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
-	var baseURI = 'http://wikidatawiki/w/api.php',
+	var baseURI = '/w/api.php',
 		params = {
 			action: 'wbgetentities',
 			ids: entityIds,
@@ -252,23 +252,27 @@ ReferenceDialogLoader.init = function( templateUrl ) {
 			} );
 
 			if ( guid !== null ) {
-				$.getJSON( templateUrl, function( template ) {
-					var windowManager = new OO.ui.WindowManager();
+				$.ajax({
+					url: templateUrl,
+					dataType: 'json',
+					success: function( template ) {
+						var windowManager = new OO.ui.WindowManager();
 
-					$( 'body' ).append( windowManager.$element );
+						$( 'body' ).append( windowManager.$element );
 
-					var referenceDialog = new ReferenceDialog(
-						template,
-						guid,
-						mw.config.get( 'wgRevisionId' ),
-						{
-							size: 'large'
-						}
-					);
+						var referenceDialog = new ReferenceDialog(
+							template,
+							guid,
+							mw.config.get( 'wgRevisionId' ),
+							{
+								size: 'large'
+							}
+						);
 
-					windowManager.addWindows( [ referenceDialog ] );
-					windowManager.openWindow( referenceDialog );
-				} );
+						windowManager.addWindows( [ referenceDialog ] );
+						windowManager.openWindow( referenceDialog );
+					}
+				});
 			}
 		} );
 
@@ -278,10 +282,10 @@ ReferenceDialogLoader.init = function( templateUrl ) {
 		.append( $lookupLink );
 
 	$( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
-		$lookupSpan.insertBefore( '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
+		$lookupSpan.insertBefore(
+			'.wikibase-statementview-references-container .wikibase-toolbar-button-add'
+		);
 	});
 };
-
-ReferenceDialogLoader.init( 'https://www.filbertkm.com/reftool/template.json' );
 
 }( wikibase, mediaWiki, jQuery ) );
