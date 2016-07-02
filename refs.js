@@ -1,5 +1,7 @@
 ( function( wb, mw, $ ) {
 
+ReferenceDialogLoader = {};
+
 function ReferenceDialog( template, guid, baseRevId, config ) {
 	ReferenceDialog.super.call( this, config );
 
@@ -138,8 +140,6 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	.then( function( citoidData ) {
 		self.data = citoidData;
 
-		console.log( citoidData );
-
 		$.each( citoidData[0], function( key, value ) {
 			if ( !self.template[key] ) {
 				return;
@@ -177,7 +177,6 @@ ReferenceDialog.prototype.setSnakValue = function( template, value ) {
 };
 
 ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
-	console.log( valuetype );
 	var data = {};
 
 	if ( valuetype === "monolingualtext" ) {
@@ -226,7 +225,12 @@ ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 	} );
 };
 
-function init() {
+ReferenceDialogLoader.init = function( templateUrl ) {
+	if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0
+		&& mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
+	    return;
+	}
+
 	var $lookupLink = $( '<a>' )
 		.text( 'lookup reference' )
 		.attr( {
@@ -248,7 +252,7 @@ function init() {
 			} );
 
 			if ( guid !== null ) {
-				$.getJSON( 'https://rawgit.com/filbertkm/wikidata-refs/master/template.json', function( template ) {
+				$.getJSON( templateUrl, function( template ) {
 					var windowManager = new OO.ui.WindowManager();
 
 					$( 'body' ).append( windowManager.$element );
@@ -268,16 +272,14 @@ function init() {
 			}
 		} );
 
-	var $lookupSpan = $( '<span>' )
+	var $lookupSpan = $( '<div>' )
 		.attr( { 'class': 'wikibase-toolbar-button' } )
 		.css( { 'margin-left': '.4em' } )
 		.append( $lookupLink );
 
-	$( '.wikibase-statementview-references .wikibase-addtoolbar-container' ).append( $lookupSpan );
-}
-
-$( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
-	$( init );
-} );
+	$( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
+		$( '.wikibase-statementview-references' ).append( $lookupSpan );
+	});
+};
 
 }( wikibase, mediaWiki, jQuery ) );
