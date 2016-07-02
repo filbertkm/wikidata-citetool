@@ -273,13 +273,15 @@ ReferenceDialogLoader.init = function( templateUrl ) {
 		} );
 
 	var $lookupSpan = $( '<div>' )
-		.attr( { 'class': 'wikibase-toolbar-button' } )
-		.css( { 'margin-left': '.4em' } )
+		.attr( { 'class': 'wikibase-toolbar-button wikibase-ref-lookup' } )
+		.css( { 'float': 'left' } )
 		.append( $lookupLink );
 
 	$( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
-		$( '.wikibase-statementview-references' ).append( $lookupSpan );
+		$lookupSpan.insertBefore( '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
 	});
 };
+
+ReferenceDialogLoader.init( 'https://www.filbertkm.com/reftool/template.json' );
 
 }( wikibase, mediaWiki, jQuery ) );
