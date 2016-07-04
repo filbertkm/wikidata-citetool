@@ -246,7 +246,7 @@ ReferenceDialogLoader.init = function( templateUrl ) {
 				guid = null;
 
 			$.each( classes, function( key, value ) {
-				if ( value.indexOf( "wikibase-statement-Q" ) == 0 ) {
+				if ( value.match( /wikibase-statement-Q/i ) ) {
 					guid = value.substring( 19 );
 				}
 			} );
