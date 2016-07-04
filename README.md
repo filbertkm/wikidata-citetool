@@ -9,10 +9,8 @@ The tool works currently as a user script on-wiki.  To enable the script, add so
 
 ```
 mw.loader.using(['wikibase', 'oojs-ui'], function() {
-	mw.loader.load( 'https://http://www.filbertkm.com/reftool/refs.js' );
-
-	window.setTimeout(function() {
-		wb.ReferenceDialogLoader.init( 'https://www.wikidata.org/w/index.php?title=User:Aude/refs-template.json&action=raw&ctype=text/javascript' );
-	}, 300 );
+	$.getScript( 'https://www.filbertkm.com/reftool/refs.js', function() {
+		ReferenceDialogLoader.init( 'https://www.wikidata.org/w/index.php?title=User:Aude/refs-template.json&action=raw&ctype=application/json' );
+	});
 });
 ```
