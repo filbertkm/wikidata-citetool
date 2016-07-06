@@ -281,11 +281,14 @@ ReferenceDialogLoader.init = function( templateUrl ) {
 		.css( { 'float': 'left' } )
 		.append( $lookupLink );
 
-	$( '.wikibase-statementview' ).last().on( 'statementviewcreate', function() {
-		$lookupSpan.insertBefore(
-			'.wikibase-statementview-references-container .wikibase-toolbar-button-add'
-		);
-	});
+	var timer = setInterval(function() {
+		var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
+
+		if ( $refs.length ) {
+			$lookupSpan.insertBefore( $refs );
+			window.clearInterval(timer);
+		}
+	}, 200 );
 };
 
 }( wikibase, mediaWiki, jQuery ) );
