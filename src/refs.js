@@ -1,5 +1,75 @@
 ( function( wb, mw, $ ) {
 
+function FormPanelView() {
+
+	var lookupInput;
+
+	var render = function() {
+		var panel = new OO.ui.PanelLayout( {
+			padded: true,
+			expanded: false,
+			classes: [ 'refdialog-panel-lookup' ]
+		} );
+
+		var fieldSetLayout = new OO.ui.FieldsetLayout();
+
+		lookupInput = new OO.ui.TextInputWidget( {
+			placeholder: 'Enter url'
+		} );
+
+		fieldSetLayout.addItems( [
+			new OO.ui.FieldLayout(
+				lookupInput,
+				{
+					label: 'URL'
+				}
+			)
+		] );
+
+		panel.$element.append( fieldSetLayout.$element );
+		panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
+
+		return panel;
+	};
+
+	var getLookupInputValue = function() {
+		return lookupInput.getValue();
+	};
+
+	return {
+		render: render,
+		getLookupInputValue: getLookupInputValue
+	};
+
+}
+
+function ResultsPanelView() {
+
+	var resultsPanel;
+
+	var render = function() {
+		resultsPanel = new OO.ui.PanelLayout( {
+			$content: $( '<h3>Result</h3>' ),
+			classes: [ 'refdialog-panel-result' ],
+			padded: true,
+			scrollable: true,
+			expanded: false
+		} );
+
+		return resultsPanel;
+	};
+
+	var appendResult = function( $result ) {
+		resultsPanel.$element.append( $result );
+	};
+
+	return {
+		appendResult: appendResult,
+		render: render
+	};
+
+}
+
 ReferenceDialogLoader = {};
 
 function ReferenceDialog( template, guid, baseRevId, config ) {
@@ -8,6 +78,9 @@ function ReferenceDialog( template, guid, baseRevId, config ) {
 	this.template = template;
 	this.guid = guid;
 	this.baseRevId = baseRevId;
+
+	this.formPanelView = new FormPanelView();
+	this.resultsPanelView = new ResultsPanelView();
 }
 
 OO.inheritClass( ReferenceDialog, OO.ui.ProcessDialog );
@@ -39,57 +112,21 @@ ReferenceDialog.prototype.initialize = function() {
 	this.citoidData = null;
 	this.snakData = {};
 
-	this._buildFormPanel();
-	this._buildResultPanel();
+	var panel = this.formPanelView.render(),
+		resultsPanel = this.resultsPanelView.render();
 
 	this.panels = {
-		lookup: this.panel,
-		result: this.resultPanel
+		lookup: panel,
+		result: resultsPanel
 	};
 
 	this.stack = new OO.ui.StackLayout( {
-		items: [ this.panel, this.resultPanel ],
+		items: [ panel, resultsPanel ],
 		classes: [ 'container' ],
 		expanded: false
 	} );
 
 	this.$body.append( this.stack.$element );
-};
-
-ReferenceDialog._buildFormPanel = function() {
-	this.panel = new OO.ui.PanelLayout( {
-		$: this.$,
-		padded: true,
-		expanded: false,
-		classes: [ 'refdialog-panel-lookup' ]
-	} );
-
-	var fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } ),
-		lookupInput = new OO.ui.TextInputWidget( {
-			placeholder: 'Enter url'
-		} );
-
-	fieldSetLayout.addItems( [
-		new OO.ui.FieldLayout(
-			lookupInput,
-			{
-				label: 'URL'
-			}
-		)
-	] );
-
-	this.panel.$element.append( fieldSetLayout.$element );
-	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
-};
-
-ReferenceDialog._buildResultPanel = function() {
-	this.resultPanel = new OO.ui.PanelLayout( {
-		$content: $( '<h3>Result</h3>' ),
-		classes: [ 'refdialog-panel-result' ],
-		padded: true,
-		scrollable: true,
-		expanded: false
-	} );
 };
 
 ReferenceDialog.prototype.getSetupProcess = function( data ) {
@@ -107,7 +144,7 @@ ReferenceDialog.prototype.getActionProcess = function( action ) {
 
 	if ( action === 'lookup' ) {
 		return new OO.ui.Process( function () {
-			return self.doLookup( self.lookupInput.getValue() );
+			return self.doLookup( self.formPanelView.getLookupInputValue() );
 		} );
 	} else if ( action === 'save' ) {
 		return new OO.ui.Process( function() {
@@ -147,6 +184,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 			var entityId = self.template[key].id;
 
 			self.lookupLabel( entityId ).done( function( labelData ) {
+				console.log( entityId );
 				console.log( labelData );
 
 				self.setSnakValue( self.template[key], value );
@@ -156,7 +194,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 				 	+ '</div>'
 				);
 
-				self.resultPanel.$element.append( $result );
+				self.resultsPanelView.appendResult( $result );
 
 				self.actions.setMode( 'result' );
 				self.setModePanel( 'result' );
@@ -166,7 +204,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	} );
 };
 
-ReferenceDialog.setSnakValue = function( template, value ) {
+ReferenceDialog.prototype.setSnakValue = function( template, value ) {
 	var propertyId = template.id,
 		data = 	{
 			"snaktype": "value",
@@ -177,7 +215,7 @@ ReferenceDialog.setSnakValue = function( template, value ) {
 	this.snakData[propertyId] = [ data ];
 };
 
-ReferenceDialog.getDataValue = function( valuetype, value ) {
+ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
 	var data = {};
 
 	if ( valuetype === "monolingualtext" ) {
@@ -200,7 +238,7 @@ ReferenceDialog.getDataValue = function( valuetype, value ) {
 	return data;
 };
 
-ReferenceDialog.saveReference = function() {
+ReferenceDialog.prototype.saveReference = function() {
 	var api = new wb.api.RepoApi( new mw.Api() );
 
 	return api.setReference( this.guid, this.snakData, this.baseRevId )
@@ -209,7 +247,7 @@ ReferenceDialog.saveReference = function() {
 		} );
 };
 
-ReferenceDialog.lookupLabel = function( entityIds ) {
+ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 	var baseURI = '/w/api.php',
 		params = {
 			action: 'wbgetentities',
