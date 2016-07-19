@@ -45,7 +45,7 @@ ReferenceDialog.prototype.initialize = function() {
 	this.panels = {
 		lookup: this.panel,
 		result: this.resultPanel
-	}
+	};
 
 	this.stack = new OO.ui.StackLayout( {
 		items: [ this.panel, this.resultPanel ],
@@ -56,7 +56,7 @@ ReferenceDialog.prototype.initialize = function() {
 	this.$body.append( this.stack.$element );
 };
 
-ReferenceDialog.prototype._buildFormPanel = function() {
+ReferenceDialog._buildFormPanel = function() {
 	this.panel = new OO.ui.PanelLayout( {
 		$: this.$,
 		padded: true,
@@ -64,26 +64,25 @@ ReferenceDialog.prototype._buildFormPanel = function() {
 		classes: [ 'refdialog-panel-lookup' ]
 	} );
 
-	this.fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } );
+	var fieldSetLayout = new OO.ui.FieldsetLayout( { $: this.$ } ),
+		lookupInput = new OO.ui.TextInputWidget( {
+			placeholder: 'Enter url'
+		} );
 
-	this.lookupInput = new OO.ui.TextInputWidget( {
-		placeholder: 'Enter url'
-	} );
-
-	this.fieldSetLayout.addItems( [
+	fieldSetLayout.addItems( [
 		new OO.ui.FieldLayout(
-			this.lookupInput,
+			lookupInput,
 			{
 				label: 'URL'
 			}
 		)
 	] );
 
-	this.panel.$element.append( this.fieldSetLayout.$element );
+	this.panel.$element.append( fieldSetLayout.$element );
 	this.panel.$element.addClass( 'wikidata-refs-ReferencesWidget' );
 };
 
-ReferenceDialog.prototype._buildResultPanel = function() {
+ReferenceDialog._buildResultPanel = function() {
 	this.resultPanel = new OO.ui.PanelLayout( {
 		$content: $( '<h3>Result</h3>' ),
 		classes: [ 'refdialog-panel-result' ],
@@ -145,9 +144,11 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 				return;
 			}
 
-			var entityId = self.template[key]["id"];
+			var entityId = self.template[key].id;
 
 			self.lookupLabel( entityId ).done( function( labelData ) {
+				console.log( labelData );
+
 				self.setSnakValue( self.template[key], value );
 
 				var $result = $( '<div>'
@@ -165,8 +166,8 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	} );
 };
 
-ReferenceDialog.prototype.setSnakValue = function( template, value ) {
-	var propertyId = template["id"],
+ReferenceDialog.setSnakValue = function( template, value ) {
+	var propertyId = template.id,
 		data = 	{
 			"snaktype": "value",
 			"property": propertyId,
@@ -176,7 +177,7 @@ ReferenceDialog.prototype.setSnakValue = function( template, value ) {
 	this.snakData[propertyId] = [ data ];
 };
 
-ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
+ReferenceDialog.getDataValue = function( valuetype, value ) {
 	var data = {};
 
 	if ( valuetype === "monolingualtext" ) {
@@ -199,7 +200,7 @@ ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
 	return data;
 };
 
-ReferenceDialog.prototype.saveReference = function() {
+ReferenceDialog.saveReference = function() {
 	var api = new wb.api.RepoApi( new mw.Api() );
 
 	return api.setReference( this.guid, this.snakData, this.baseRevId )
@@ -208,7 +209,7 @@ ReferenceDialog.prototype.saveReference = function() {
 		} );
 };
 
-ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
+ReferenceDialog.lookupLabel = function( entityIds ) {
 	var baseURI = '/w/api.php',
 		params = {
 			action: 'wbgetentities',
@@ -225,70 +226,74 @@ ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 	} );
 };
 
-ReferenceDialogLoader.init = function( templateUrl ) {
-	if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0
-		&& mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
-	    return;
-	}
+ReferenceDialogLoader = {
 
-	var $lookupLink = $( '<a>' )
-		.text( 'lookup reference' )
-		.attr( {
-			href: '#'
-		} )
-		.on( 'click', function( e ) {
-			e.preventDefault();
+	init: function( templateUrl ) {
+		if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0
+			&& mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
+			return;
+		}
 
-			$( '.wikibase-referenceview-new' ).css( { 'display': 'none' } );
+		var $lookupLink = $( '<a>' )
+			.text( 'lookup reference' )
+			.attr( {
+				href: '#'
+			} )
+			.on( 'click', function( e ) {
+				e.preventDefault();
 
-			var $statement = e.target.closest( '.wikibase-statementview' ),
-				classes = $statement.getAttribute( 'class' ).split( ' ' ),
-				guid = null;
+				$( '.wikibase-referenceview-new' ).css( { 'display': 'none' } );
 
-			$.each( classes, function( key, value ) {
-				if ( value.match( /wikibase-statement-Q/i ) ) {
-					guid = value.substring( 19 );
+				var $statement = e.target.closest( '.wikibase-statementview' ),
+					classes = $statement.getAttribute( 'class' ).split( ' ' ),
+					guid = null;
+
+				$.each( classes, function( key, value ) {
+					if ( value.match( /wikibase-statement-Q/i ) ) {
+						guid = value.substring( 19 );
+					}
+				} );
+
+				if ( guid !== null ) {
+					$.ajax({
+						url: templateUrl,
+						dataType: 'json',
+						success: function( template ) {
+							var windowManager = new OO.ui.WindowManager();
+
+							$( 'body' ).append( windowManager.$element );
+
+							var referenceDialog = new ReferenceDialog(
+								template,
+								guid,
+								mw.config.get( 'wgRevisionId' ),
+								{
+									size: 'large'
+								}
+							);
+
+							windowManager.addWindows( [ referenceDialog ] );
+							windowManager.openWindow( referenceDialog );
+						}
+					});
 				}
 			} );
 
-			if ( guid !== null ) {
-				$.ajax({
-					url: templateUrl,
-					dataType: 'json',
-					success: function( template ) {
-						var windowManager = new OO.ui.WindowManager();
+		var $lookupSpan = $( '<div>' )
+			.attr( { 'class': 'wikibase-toolbar-button wikibase-ref-lookup' } )
+			.css( { 'float': 'left' } )
+			.append( $lookupLink );
 
-						$( 'body' ).append( windowManager.$element );
+		var timer = setInterval(function() {
+			var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
 
-						var referenceDialog = new ReferenceDialog(
-							template,
-							guid,
-							mw.config.get( 'wgRevisionId' ),
-							{
-								size: 'large'
-							}
-						);
-
-						windowManager.addWindows( [ referenceDialog ] );
-						windowManager.openWindow( referenceDialog );
-					}
-				});
+			if ( $refs.length ) {
+				$lookupSpan.insertBefore( $refs );
+				window.clearInterval(timer);
 			}
-		} );
+		}, 200 );
+	}
 
-	var $lookupSpan = $( '<div>' )
-		.attr( { 'class': 'wikibase-toolbar-button wikibase-ref-lookup' } )
-		.css( { 'float': 'left' } )
-		.append( $lookupLink );
-
-	var timer = setInterval(function() {
-		var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
-
-		if ( $refs.length ) {
-			$lookupSpan.insertBefore( $refs );
-			window.clearInterval(timer);
-		}
-	}, 200 );
 };
 
 }( wikibase, mediaWiki, jQuery ) );
