@@ -1,5 +1,65 @@
 ( function( wb, mw, $ ) {
 
+var CiteTool = {
+
+	init: function( options ) {
+		this.options = $.extend( {},
+			this.options,
+			options
+		);
+	},
+
+	makeLink: function() {
+		var self = this;
+
+		return $( '<a>' )
+			.text( 'lookup reference' )
+			.attr( {
+				href: '#'
+			} )
+			.on( 'click', function( e ) {
+				e.preventDefault();
+
+				$( '.wikibase-referenceview-new' ).css( { 'display': 'none' } );
+
+				var $statement = e.target.closest( '.wikibase-statementview' ),
+					classes = $statement.getAttribute( 'class' ).split( ' ' ),
+					guid = null;
+
+				$.each( classes, function( key, value ) {
+					if ( value.match( /wikibase-statement-Q/i ) ) {
+						guid = value.substring( 19 );
+					}
+				} );
+
+				if ( guid !== null ) {
+					$.ajax({
+						url: self.options.templateUrl,
+						dataType: 'json',
+						success: function( template ) {
+							var windowManager = new OO.ui.WindowManager();
+
+							$( 'body' ).append( windowManager.$element );
+
+							var referenceDialog = new ReferenceDialog(
+								template,
+								guid,
+								mw.config.get( 'wgRevisionId' ),
+								{
+									size: 'large'
+								}
+							);
+
+							windowManager.addWindows( [ referenceDialog ] );
+							windowManager.openWindow( referenceDialog );
+						}
+					});
+				}
+			} );
+	}
+
+};
+
 function FormPanelView() {
 
 	var lookupInput;
@@ -184,9 +244,6 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 			var entityId = self.template[key].id;
 
 			self.lookupLabel( entityId ).done( function( labelData ) {
-				console.log( entityId );
-				console.log( labelData );
-
 				self.setSnakValue( self.template[key], value );
 
 				var $result = $( '<div>'
@@ -272,55 +329,17 @@ ReferenceDialogLoader = {
 			return;
 		}
 
-		var $lookupLink = $( '<a>' )
-			.text( 'lookup reference' )
-			.attr( {
-				href: '#'
-			} )
-			.on( 'click', function( e ) {
-				e.preventDefault();
+		var citeTool = Object.create(CiteTool);
 
-				$( '.wikibase-referenceview-new' ).css( { 'display': 'none' } );
+		citeTool.init({
+			'templateUrl': templateUrl
+		});
 
-				var $statement = e.target.closest( '.wikibase-statementview' ),
-					classes = $statement.getAttribute( 'class' ).split( ' ' ),
-					guid = null;
-
-				$.each( classes, function( key, value ) {
-					if ( value.match( /wikibase-statement-Q/i ) ) {
-						guid = value.substring( 19 );
-					}
-				} );
-
-				if ( guid !== null ) {
-					$.ajax({
-						url: templateUrl,
-						dataType: 'json',
-						success: function( template ) {
-							var windowManager = new OO.ui.WindowManager();
-
-							$( 'body' ).append( windowManager.$element );
-
-							var referenceDialog = new ReferenceDialog(
-								template,
-								guid,
-								mw.config.get( 'wgRevisionId' ),
-								{
-									size: 'large'
-								}
-							);
-
-							windowManager.addWindows( [ referenceDialog ] );
-							windowManager.openWindow( referenceDialog );
-						}
-					});
-				}
-			} );
-
-		var $lookupSpan = $( '<div>' )
-			.attr( { 'class': 'wikibase-toolbar-button wikibase-ref-lookup' } )
-			.css( { 'float': 'left' } )
-			.append( $lookupLink );
+		var $lookupLink = citeTool.makeLink(),
+			$lookupSpan = $( '<div>' )
+				.attr( { 'class': 'wikibase-toolbar-button wikibase-ref-lookup' } )
+				.css( { 'float': 'left' } )
+				.append( $lookupLink );
 
 		var timer = setInterval(function() {
 			var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
