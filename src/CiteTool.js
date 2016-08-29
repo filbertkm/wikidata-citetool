@@ -63,6 +63,58 @@ var CiteTool = {
 
 };
 
+CiteToolSnakBuilder = {
+
+	snakData: {},
+
+	init: function( options ) {
+		this.options = $.extend( {},
+			this.options,
+			options
+		);
+	},
+
+	setSnakValue: function( template, value ) {
+		var propertyId = template.id,
+			data =  {
+				"snaktype": "value",
+				"property": propertyId,
+				"datavalue": this.getDataValue( template.valuetype, value )
+			};
+
+		this.snakData[propertyId] = [ data ];
+	},
+
+	getDataValue: function( valuetype, value ) {
+		var data = {};
+
+		if ( valuetype === "monolingualtext" ) {
+			data = {
+				"type":"monolingualtext",
+				"value": {
+					"text": value,
+					"language": this.options.userLanguage
+				}
+			};
+
+			return data;
+		} else if ( valuetype === "string" ) {
+			data = {
+				"type": "string",
+				"value": value
+			};
+		}
+
+
+		return data;
+	},
+
+	getSnakData: function() {
+		return this.snakData;
+	}
+
+};
+
 function FormPanelView() {
 
 	var lookupInput;
@@ -237,7 +289,12 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 		}
 	} )
 	.then( function( citoidData ) {
-		self.data = citoidData;
+		self.data = citoidData,
+
+		self.snakBuilder = Object.create( CiteToolSnakBuilder ),
+		self.snakBuilder.init( {
+			userLanguage: mw.config.get( 'wgUserLanguage' )
+		} ); ;
 
 		$.each( citoidData[0], function( key, value ) {
 			if ( !self.template[key] ) {
@@ -246,15 +303,22 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 
 			var entityId = self.template[key].id;
 
+			self.$resultTable = $( '<table>' )
+				.attr( { 'id': 'wikidata-citetool-results' } );
+
 			self.lookupLabel( entityId ).done( function( labelData ) {
-				self.setSnakValue( self.template[key], value );
+				self.snakBuilder.setSnakValue( self.template[key], value );
 
-				var $result = $( '<div>'
-					+ labelData.entities[entityId].labels.en.value + ': ' + value
-				 	+ '</div>'
-				);
+				var $row = $( '<tr>' ),
+					$propertyCell = $( '<td>' ).text( labelData.entities[entityId].labels.en.value ),
+					$valueCell = $( '<td>' ).text( value );
 
-				self.resultsPanelView.appendResult( $result );
+				$row.append( $propertyCell );
+				$row.append( $valueCell );
+
+				self.$resultTable.append( $row );
+
+				self.resultsPanelView.appendResult( self.$resultTable );
 
 				self.actions.setMode( 'result' );
 				self.setModePanel( 'result' );
@@ -264,44 +328,10 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 	} );
 };
 
-ReferenceDialog.prototype.setSnakValue = function( template, value ) {
-	var propertyId = template.id,
-		data = 	{
-			"snaktype": "value",
-			"property": propertyId,
-			"datavalue": this.getDataValue( template.valuetype, value )
-		};
-
-	this.snakData[propertyId] = [ data ];
-};
-
-ReferenceDialog.prototype.getDataValue = function( valuetype, value ) {
-	var data = {};
-
-	if ( valuetype === "monolingualtext" ) {
-		data = {
-			"type":"monolingualtext",
-			"value": {
-				"text": value,
-				"language": "en"
-			}
-		};
-
-		return data;
-	} else if ( valuetype === "string" ) {
-		data = {
-			"type": "string",
-			"value": value
-		};
-	}
-
-	return data;
-};
-
 ReferenceDialog.prototype.saveReference = function() {
 	var api = new wb.api.RepoApi( new mw.Api() );
 
-	return api.setReference( this.guid, this.snakData, this.baseRevId )
+	return api.setReference( this.guid, this.snakBuilder.getSnakData(), this.baseRevId )
 		.then( function( res ) {
 			console.log( res );
 		} );
