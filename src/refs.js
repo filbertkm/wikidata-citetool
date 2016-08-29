@@ -12,11 +12,12 @@ var CiteTool = {
 	makeLink: function() {
 		var self = this;
 
-		return $( '<a>' )
-			.text( 'lookup reference' )
-			.attr( {
-				href: '#'
-			} )
+		var iconWidget = new OO.ui.IconWidget( {
+			icon: 'search',
+			iconTitle: 'Lookup'
+		} );
+
+		iconWidget.$element
 			.on( 'click', function( e ) {
 				e.preventDefault();
 
@@ -56,6 +57,8 @@ var CiteTool = {
 					});
 				}
 			} );
+
+		return iconWidget.$element;
 	}
 
 };
@@ -335,17 +338,13 @@ ReferenceDialogLoader = {
 			'templateUrl': templateUrl
 		});
 
-		var $lookupLink = citeTool.makeLink(),
-			$lookupSpan = $( '<div>' )
-				.attr( { 'class': 'wikibase-toolbar-button wikibase-ref-lookup' } )
-				.css( { 'float': 'left' } )
-				.append( $lookupLink );
+		var $lookupLink = citeTool.makeLink();
 
 		var timer = setInterval(function() {
-			var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar-button-add' );
+			var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar' );
 
 			if ( $refs.length ) {
-				$lookupSpan.insertBefore( $refs );
+				$refs.append( $lookupLink );
 				window.clearInterval(timer);
 			}
 		}, 200 );
