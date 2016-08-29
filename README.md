@@ -9,7 +9,7 @@ The tool works currently as a user script on-wiki.  To enable the script, add so
 
 ```
 mw.loader.using(['wikibase', 'oojs-ui'], function() {
-	$.getScript( 'https://www.filbertkm.com/reftool/refs.js', function() {
+	$.getScript( 'https://rawgit.com/filbertkm/wikidata-citetool/master/src/CiteTool.js', function() {
 		ReferenceDialogLoader.init( 'https://www.wikidata.org/w/index.php?title=User:Aude/refs-template.json&action=raw&ctype=application/json' );
 	});
 });
