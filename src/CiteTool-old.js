@@ -364,21 +364,20 @@ ReferenceDialogLoader = {
 
 		var citeTool = Object.create(CiteTool);
 
+		citeTool.init({
+			'templateUrl': templateUrl
+		});
+
+		var $lookupLink = citeTool.makeLink();
+
 		var timer = setInterval(function() {
-			$( '.wikibase-statementview' )
-				.on( 'referenceviewafterstartediting', function( e ) {
-					var $autofill = $( e.target ).find( '.wikibase-referenceview-autofill' );
+			var $refs = $(  '.wikibase-statementview-references-container .wikibase-toolbar' );
 
-					if ( $autofill.length ) {
-						return;
-					}
-
-					$( e.target ).find( '.wikibase-referenceview-heading' ).append(
-						$( '<a/>' ).text( 'autofill' )
-							.attr({ 'class': 'wikibase-referenceview-autofill' })
-					);
-				} );
-		}, 300 );
+			if ( $refs.length ) {
+				$refs.append( $lookupLink );
+				window.clearInterval(timer);
+			}
+		}, 200 );
 	}
 
 };
