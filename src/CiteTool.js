@@ -354,15 +354,55 @@ ReferenceDialog.prototype.lookupLabel = function( entityIds ) {
 	} );
 };
 
+
+function CiteToolController() {
+	var self = this;
+};
+
+CiteToolController.prototype.hasLookupSnakProperty = function( referenceView ) {
+    var refView = $( referenceView ).data( 'referenceview' ),
+        reference = refView.value(),
+        snaks = reference.getSnaks(),
+		hasLookupSnak = false;
+
+    snaks.each( function( k, snak ) {
+        if ( snak.getPropertyId() === 'P15' ) {
+            hasLookupSnak = true;
+        }
+    } );
+
+	return hasLookupSnak;
+};
+
+CiteToolController.prototype.getLookupSnakValue = function( referenceView ) {
+	var refView = $( referenceView ).data( 'referenceview' ),
+		reference = refView.value(),
+		snaks = reference.getSnaks();
+
+	snaks.each( function( k, snak ) {
+		if ( snak.getPropertyId() === 'P15' ) {
+			var value = snak.getValue();
+			console.log( snak );
+			console.log( value );
+		}
+	} );
+};
+
+CiteToolController.prototype.addAutofillLink = function( referenceView ) {
+	$( referenceView ).find( '.wikibase-referenceview-heading' ).append(
+		$( '<a/>' ).text( 'autofill' )
+			.attr({ 'class': 'wikibase-referenceview-autofill' })
+		);
+};
+
 ReferenceDialogLoader = {
 
 	init: function( templateUrl ) {
+		console.log( 'init' );
 		if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0
 			&& mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
 			return;
 		}
-
-		var citeTool = Object.create(CiteTool);
 
 		var timer = setInterval(function() {
 			$( '.wikibase-statementview' )
@@ -373,10 +413,11 @@ ReferenceDialogLoader = {
 						return;
 					}
 
-					$( e.target ).find( '.wikibase-referenceview-heading' ).append(
-						$( '<a/>' ).text( 'autofill' )
-							.attr({ 'class': 'wikibase-referenceview-autofill' })
-					);
+					var citeToolController = new CiteToolController();
+
+					if ( citeToolController.hasLookupSnakProperty( e.target ) ) {
+						citeToolController.addAutofillLink( e.target );
+					}
 				} );
 		}, 300 );
 	}
