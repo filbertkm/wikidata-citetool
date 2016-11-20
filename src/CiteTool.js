@@ -377,22 +377,53 @@ CiteToolController.prototype.hasLookupSnakProperty = function( referenceView ) {
 CiteToolController.prototype.getLookupSnakValue = function( referenceView ) {
 	var refView = $( referenceView ).data( 'referenceview' ),
 		reference = refView.value(),
-		snaks = reference.getSnaks();
+		snaks = reference.getSnaks()
+		value = null;
 
 	snaks.each( function( k, snak ) {
 		if ( snak.getPropertyId() === 'P15' ) {
-			var value = snak.getValue();
-			console.log( snak );
-			console.log( value );
+			value = snak.getValue().getValue();
 		}
 	} );
+
+	return value;
+};
+
+CiteToolController.prototype.onAutofillClick = function( target ) {
+	var refview = $( target ).closest( '.wikibase-referenceview' ),
+		value = this.getLookupSnakValue( refview );
+
+		this.doLookup( value );
 };
 
 CiteToolController.prototype.addAutofillLink = function( referenceView ) {
+	var self = this;
+
 	$( referenceView ).find( '.wikibase-referenceview-heading' ).append(
 		$( '<a/>' ).text( 'autofill' )
 			.attr({ 'class': 'wikibase-referenceview-autofill' })
+			.on( 'click', function( e ) {
+				e.preventDefault();
+				self.onAutofillClick( e.target );
+			} )
 		);
+};
+
+CiteToolController.prototype.doLookup = function( value ) {
+	return $.ajax( {
+        method: 'GET',
+        url: 'https://citoid.wikimedia.org/api',
+        data: {
+            action: 'query',
+            format: 'mediawiki',
+            search: value,
+            basefields: true,
+            jsonp: true
+        }
+    } )
+    .then( function( citoidData ) {
+        console.log( citoidData );
+	} );
 };
 
 ReferenceDialogLoader = {
