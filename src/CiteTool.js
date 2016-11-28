@@ -294,7 +294,7 @@ ReferenceDialog.prototype.doLookup = function( urlValue ) {
 		self.snakBuilder = Object.create( CiteToolSnakBuilder ),
 		self.snakBuilder.init( {
 			userLanguage: mw.config.get( 'wgUserLanguage' )
-		} ); ;
+		} );
 
 		$.each( citoidData[0], function( key, value ) {
 			if ( !self.template[key] ) {
@@ -359,11 +359,15 @@ function CiteToolController() {
 	var self = this;
 };
 
-CiteToolController.prototype.hasLookupSnakProperty = function( referenceView ) {
-    var refView = $( referenceView ).data( 'referenceview' ),
-        reference = refView.value(),
-        snaks = reference.getSnaks(),
-		hasLookupSnak = false;
+CiteToolController.prototype.getReferenceFromView = function( referenceView ) {
+	var refView = $( referenceView ).data( 'referenceview' );
+
+	return refView.value();
+};
+
+CiteToolController.prototype.hasLookupSnakProperty = function( reference ) {
+	var hasLookupSnak = false,
+		snaks = reference.getSnaks();
 
     snaks.each( function( k, snak ) {
         if ( snak.getPropertyId() === 'P15' ) {
@@ -374,13 +378,10 @@ CiteToolController.prototype.hasLookupSnakProperty = function( referenceView ) {
 	return hasLookupSnak;
 };
 
-CiteToolController.prototype.getLookupSnakValue = function( referenceView ) {
-	var refView = $( referenceView ).data( 'referenceview' ),
-		reference = refView.value(),
-		snaks = reference.getSnaks()
-		value = null;
+CiteToolController.prototype.getLookupSnakValue = function( reference ) {
+	var value = null;
 
-	snaks.each( function( k, snak ) {
+	reference.getSnaks().each( function( k, snak ) {
 		if ( snak.getPropertyId() === 'P15' ) {
 			value = snak.getValue().getValue();
 		}
@@ -390,10 +391,23 @@ CiteToolController.prototype.getLookupSnakValue = function( referenceView ) {
 };
 
 CiteToolController.prototype.onAutofillClick = function( target ) {
-	var refview = $( target ).closest( '.wikibase-referenceview' ),
-		value = this.getLookupSnakValue( refview );
+	var self = this,
+		referenceView = $( target ).closest( '.wikibase-referenceview' ),
+		reference = this.getReferenceFromView( referenceView );
 
-		this.doLookup( value );
+	if ( reference === null ) {
+		return;
+	}
+
+	var value = this.getLookupSnakValue( reference ),
+		statementView = $( referenceView ).closest( '.wikibase-statementview' );
+
+	this.doLookup( value )
+		.done( function( data ) {
+			console.log( data );
+
+			debugger;
+		} );
 };
 
 CiteToolController.prototype.addAutofillLink = function( referenceView ) {
@@ -410,7 +424,9 @@ CiteToolController.prototype.addAutofillLink = function( referenceView ) {
 };
 
 CiteToolController.prototype.doLookup = function( value ) {
-	return $.ajax( {
+	var dfd = $.Deferred();
+
+	$.ajax( {
         method: 'GET',
         url: 'https://citoid.wikimedia.org/api',
         data: {
@@ -421,15 +437,16 @@ CiteToolController.prototype.doLookup = function( value ) {
             jsonp: true
         }
     } )
-    .then( function( citoidData ) {
-        console.log( citoidData );
+    .done( function( citoidData ) {
+        dfd.resolve( citoidData );
 	} );
+
+	return dfd.promise();
 };
 
 ReferenceDialogLoader = {
 
 	init: function( templateUrl ) {
-		console.log( 'init' );
 		if ( ( mw.config.get( 'wgNamespaceNumber' ) !== 0
 			&& mw.config.get( 'wgNamespaceNumber' ) !== 120 ) || !mw.config.exists( 'wbEntityId' ) ) {
 			return;
@@ -444,9 +461,10 @@ ReferenceDialogLoader = {
 						return;
 					}
 
-					var citeToolController = new CiteToolController();
+					var citeToolController = new CiteToolController(),
+						reference = citeToolController.getReferenceFromView( e.target );
 
-					if ( citeToolController.hasLookupSnakProperty( e.target ) ) {
+					if ( reference && citeToolController.hasLookupSnakProperty( reference ) ) {
 						citeToolController.addAutofillLink( e.target );
 					}
 				} );
