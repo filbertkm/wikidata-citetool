@@ -406,7 +406,24 @@ CiteToolController.prototype.onAutofillClick = function( target ) {
 		.done( function( data ) {
 			console.log( data );
 
-			debugger;
+			var refView = $( referenceView ).data( 'referenceview' ),
+				refListView = refView.$listview.data( 'listview' ),
+				snakListView = refListView.items(),
+				slv = snakListView.data( 'snaklistview' ),
+				lv = slv.$listview.data( 'listview' );
+
+			if ( data[0] && data[0].title ) {
+				var monoVal = new dataValues.MonolingualTextValue(
+						mw.config.get( 'wgUserLanguage' ),
+						data[0].title
+					),
+					snak = new wb.datamodel.PropertyValueSnak( 'P163', monoVal );
+
+				lv.addItem( snak );
+				lv.startEditing();
+
+				refView._trigger( 'change' );
+			}
 		} );
 };
 
@@ -474,3 +491,4 @@ ReferenceDialogLoader = {
 };
 
 }( wikibase, mediaWiki, jQuery ) );
+
