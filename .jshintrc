@@ -18,10 +18,11 @@
 	"strict": true,
 	"undef": true,
 	"unused": "vars",
-    "globals": {
-        "mediaWiki": true,
-        "OO": true,
-        "jQuery": false,
+	"globals": {
+		"dataValues": true,
+		"mediaWiki": true,
+		"OO": true,
+		"jQuery": false,
 		"wikibase": true,
 		"window": true
 	}
