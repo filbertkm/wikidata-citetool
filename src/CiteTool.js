@@ -88,7 +88,8 @@ CiteTool.prototype.addAutofillLink = function( referenceView ) {
 
 CiteTool.prototype.onAutofillClick = function( target ) {
 	var referenceView = $( target ).closest( '.wikibase-referenceview' ),
-		reference = this.getReferenceFromView( referenceView );
+		reference = this.getReferenceFromView( referenceView ),
+		self = this;
 
 	if ( reference === null ) {
 		return;
@@ -106,19 +107,52 @@ CiteTool.prototype.onAutofillClick = function( target ) {
 				slv = snakListView.data( 'snaklistview' ),
 				lv = slv.$listview.data( 'listview' );
 
-			if ( data[0] && data[0].title ) {
-				var monoVal = new dv.MonolingualTextValue(
-						mw.config.get( 'wgUserLanguage' ),
-						data[0].title
-					),
-					snak = new wb.datamodel.PropertyValueSnak( 'P163', monoVal );
+			if ( data[0] ) {
+				$.each( data[0], function( key, value ) {
+					if ( key === 'title' ) {
+						lv.addItem( self.getTitleSnak( value, data[0] ) );
+					} else if ( key === 'date' ) {
+						lv.addItem( self.getDateSnak(
+							self.config.zoteroProperties.date,
+							value
+						) );
+					} else if ( key === 'accessDate' ) {
+						lv.addItem( self.getDateSnak(
+							self.config.zoteroProperties.accessDate,
+							value
+						) );
+					}
+				} );
 
-				lv.addItem( snak );
 				lv.startEditing();
 
 				refView._trigger( 'change' );
 			}
 		} );
+};
+
+CiteTool.prototype.getTitleSnak = function( title, data ) {
+	var languageCode = mw.config.get( 'wgUserLanguage' );
+
+	if ( data.language ) {
+		if ( data.language === 'en-US' ) {
+			languageCode = 'en';
+		}
+	}
+
+	return new wb.datamodel.PropertyValueSnak(
+		this.config.zoteroProperties.title,
+		new dv.MonolingualTextValue( languageCode, title )
+	);
+};
+
+CiteTool.prototype.getDateSnak = function( propertyId, dateString ) {
+	var timestamp = dateString + 'T00:00:00Z';
+
+	return new wb.datamodel.PropertyValueSnak(
+		propertyId,
+		new dv.TimeValue( timestamp )
+	);
 };
 
 CiteTool.prototype.getLookupSnakValue = function( reference ) {
