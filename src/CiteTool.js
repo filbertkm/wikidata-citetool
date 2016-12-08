@@ -8,11 +8,9 @@ function CiteTool(configUrl) {
 }
 
 CiteTool.prototype.init = function() {
-	var ns = mw.config.get( 'wgNamespaceNumber' ),
-		enabledNamespaces = [ 0, 120 ],
-		self = this;
+	var self = this;
 
-	if ( enabledNamespaces.indexOf( ns ) === -1 || !mw.config.exists( 'wbEntityId' ) ) {
+	if ( !mw.config.exists( 'wbEntityId' ) ) {
 		return;
 	}
 
