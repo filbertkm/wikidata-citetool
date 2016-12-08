@@ -4,7 +4,7 @@
 
 function CiteTool(configUrl) {
 	this.configUrl = configUrl;
-	this.config = {};
+	this.config = null;
 }
 
 CiteTool.prototype.init = function() {
@@ -18,25 +18,58 @@ CiteTool.prototype.init = function() {
 
 	$( '.wikibase-statementview' )
 		.on( 'referenceviewafterstartediting', function( e ) {
-			$.ajax({
-				url: self.configUrl,
-				dataType: 'json',
-				success: function( config ) {
-					self.config = config;
-
-					var reference = self.getReferenceFromView( e.target );
-
-					if ( reference && self.getLookupSnakProperty( reference ) !== null ) {
-						self.addAutofillLink( e.target );
-					}
-
-				},
-				error: function( result ) {
-					console.log( result );
-				}
-			});
+			self.initAutofillLink( e.target );
 		} );
 
+	$( '.wikibase-statementview' )
+		.on( 'snakviewchange.wikibase.referenceview', function( e ) {
+			var referenceView = $( e.target ).closest( '.wikibase-referenceview' );
+
+			self.initAutofillLink( e.target );
+		} );
+
+};
+
+CiteTool.prototype.getConfig = function() {
+	var self = this,
+		dfd = $.Deferred();
+
+	$.ajax({
+		url: self.configUrl,
+		dataType: 'json',
+		success: function( config ) {
+			self.config = config;
+
+			dfd.resolve( config );
+		},
+		error: function( result ) {
+			console.log( result );
+		}
+	});
+
+	return dfd.promise();
+};
+
+CiteTool.prototype.initAutofillLink = function( target ) {
+	var self = this;
+
+	if ( this.config === null ) {
+		this.getConfig()
+			.done( function() {
+				self.checkReferenceAndAddAutofillLink( target );
+			} );
+	} else {
+		var refViews = $( target ).closest( '.wikibase-referenceview' );
+		self.checkReferenceAndAddAutofillLink( refViews[0] );
+	}
+};
+
+CiteTool.prototype.checkReferenceAndAddAutofillLink = function( target ) {
+	var reference = this.getReferenceFromView( target );
+
+	if ( reference && this.getLookupSnakProperty( reference ) !== null ) {
+		this.addAutofillLink( target );
+	}
 };
 
 CiteTool.prototype.getReferenceFromView = function( referenceView ) {
