@@ -16,7 +16,3 @@ mw.loader.using(['wikibase'], function() {
 });
 
 ```
-
-## Notes
-
-* https://github.com/aurimasv/z2csl/blob/master/typeMap.xml
