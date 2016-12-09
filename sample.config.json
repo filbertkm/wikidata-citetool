@@ -1,10 +1,11 @@
 {
     "properties": {
+        "P698": "PubMed ID",
         "P854": "reference url"
     },
     "zoteroProperties": {
         "accessDate": "P813",
-        "date": "P557",
+        "date": "P577",
         "title": "P1476"
     },
     "refTypes": {
