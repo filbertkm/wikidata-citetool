@@ -22,5 +22,10 @@
     "gulp-jshint": "^2.0.1",
     "gulp-notify": "^2.2.0",
     "jshint": "^2.9.2"
+  },
+  "dependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "jshint-stylish": "^2.2.1"
   }
 }

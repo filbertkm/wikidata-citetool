@@ -1,6 +1,7 @@
 var gulp = require('gulp'),
 	jshint = require('gulp-jshint'),
-	notify = require('gulp-notify');
+	notify = require('gulp-notify'),
+	concat = require('gulp-concat');
 
 gulp.task('jshint', function() {
 	gulp.src('src/*.js')
@@ -12,3 +13,11 @@ gulp.task('jshint', function() {
 			message: 'JSHint passed'
 		}))
 });
+
+gulp.task('concat', function() {
+	gulp.src('./src/*.js')
+		.pipe(concat('CiteTool.js'))
+		.pipe(gulp.dest('./dist/'));
+});
+
+gulp.task('default', [ 'jshint', 'concat' ]);
