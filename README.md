@@ -16,3 +16,9 @@ mw.loader.using(['wikibase'], function() {
 });
 
 ```
+
+## License
+
+Code includes Sparql.js from wikidata query gui, which is under Apache license:
+
+https://github.com/wikimedia/wikidata-query-gui/blob/master/LICENSE

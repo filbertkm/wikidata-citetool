@@ -21,6 +21,7 @@
 	"globals": {
 		"dataValues": true,
 		"mediaWiki": true,
+		"navigator": true,
 		"OO": true,
 		"jQuery": false,
 		"wikibase": true,
