@@ -105,16 +105,23 @@ CiteTool.prototype.getLookupProperties = function() {
 };
 
 CiteTool.prototype.addAutofillLink = function( referenceView ) {
-	var self = this;
+	var self = this,
+		$heading = $( referenceView ).find( '.wikibase-referenceview-heading' ),
+		$toolbar = $heading.find( '.wikibase-toolbar-container' );
 
-	$( referenceView ).find( '.wikibase-referenceview-heading' ).append(
-		$( '<a/>' ).text( 'autofill' )
-			.attr({ 'class': 'wikibase-referenceview-autofill' })
-			.on( 'click', function( e ) {
-				e.preventDefault();
-				self.onAutofillClick( e.target );
-			} )
-		);
+	var $span = $( '<span/>' )
+		.attr({ 'class': 'wikibase-toolbar-button' })
+		.css({ 'margin': '0 .5em' })
+		.append(
+			$( '<a/>' ).text( 'autofill' )
+				.attr({ 'class': 'wikibase-referenceview-autofill' })
+				.on( 'click', function( e ) {
+					e.preventDefault();
+					self.onAutofillClick( e.target );
+				} )
+			);
+
+	$toolbar.append( $span );
 };
 
 CiteTool.prototype.onAutofillClick = function( target ) {
