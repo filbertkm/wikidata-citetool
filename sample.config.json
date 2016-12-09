@@ -1,0 +1,22 @@
+{
+    "properties": {
+        "P854": "reference url"
+    },
+    "zoteroProperties": {
+        "accessDate": "P813",
+        "date": "P557",
+        "title": "P1476"
+    },
+    "refTypes": {
+        "newspaperArticle": {
+            "title": {
+                "id": "P1476",
+                "valuetype": "monolingualtext"
+            },
+            "url": {
+                "id": "P854",
+                "valuetype": "string"
+            }
+        }
+    }
+}
