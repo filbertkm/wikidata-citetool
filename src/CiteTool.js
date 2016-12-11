@@ -2,7 +2,7 @@
 
 'use strict';
 
-function CiteTool(configUrl) {
+function CiteTool( configUrl ) {
 	this.configUrl = configUrl;
 	this.config = null;
 
@@ -21,8 +21,9 @@ CiteTool.prototype.init = function() {
 			self.initAutofillLink( e.target );
 		} );
 
+	// @fixme the event also fires for other changes, like editing qualifiers
 	$( '.wikibase-statementview' )
-		.on( 'snakviewchange.wikibase.referenceview', function( e ) {
+		.on( 'snakviewchange', function( e ) {
 			self.initAutofillLink( e.target );
 		} );
 
@@ -71,6 +72,11 @@ CiteTool.prototype.checkReferenceAndAddAutofillLink = function( target ) {
 };
 
 CiteTool.prototype.getReferenceFromView = function( referenceView ) {
+	// not a reference view change
+	if ( referenceView === undefined ) {
+		return null;
+	}
+
 	var refView = $( referenceView ).data( 'referenceview' );
 
 	return refView.value();
