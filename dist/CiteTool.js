@@ -13,7 +13,7 @@
 
 'use strict';
 
-function CiteTool(configUrl) {
+function CiteTool( configUrl ) {
 	this.configUrl = configUrl;
 	this.config = null;
 
@@ -32,8 +32,9 @@ CiteTool.prototype.init = function() {
 			self.initAutofillLink( e.target );
 		} );
 
+	// @fixme the event also fires for other changes, like editing qualifiers
 	$( '.wikibase-statementview' )
-		.on( 'snakviewchange.wikibase.referenceview', function( e ) {
+		.on( 'snakviewchange', function( e ) {
 			self.initAutofillLink( e.target );
 		} );
 
@@ -82,6 +83,11 @@ CiteTool.prototype.checkReferenceAndAddAutofillLink = function( target ) {
 };
 
 CiteTool.prototype.getReferenceFromView = function( referenceView ) {
+	// not a reference view change
+	if ( referenceView === undefined ) {
+		return null;
+	}
+
 	var refView = $( referenceView ).data( 'referenceview' );
 
 	return refView.value();
@@ -148,49 +154,89 @@ CiteTool.prototype.onAutofillClick = function( target ) {
 
 	this.citoidClient.search( value )
 		.done( function( data ) {
-			console.log( data );
-
-			var refView = $( referenceView ).data( 'referenceview' ),
-				refListView = refView.$listview.data( 'listview' ),
-				snakListView = refListView.items(),
-				slv = snakListView.data( 'snaklistview' ),
-				lv = slv.$listview.data( 'listview' );
-
-			if ( data[0] ) {
-				$.each( data[0], function( key, val ) {
-					if ( key === 'title' ) {
-						lv.addItem( self.getTitleSnak( val, data[0] ) );
-					} else if ( key === 'date' ) {
-						lv.addItem( self.getDateSnak(
-							self.config.zoteroProperties.date,
-							val
-						) );
-					} else if ( key === 'accessDate' ) {
-						lv.addItem( self.getDateSnak(
-							self.config.zoteroProperties.accessDate,
-							val
-						) );
-					}
-				} );
-
-				lv.startEditing();
-
-				refView._trigger( 'change' );
-			}
+			self.addReferenceSnaksFromCitoidData( data, referenceView );
 		} );
 };
 
-CiteTool.prototype.getTitleSnak = function( title, data ) {
-	var languageCode = mw.config.get( 'wgUserLanguage' );
+CiteTool.prototype.addReferenceSnaksFromCitoidData = function( data, referenceView ) {
+	console.log( data );
 
-	if ( data.language ) {
-		if ( data.language === 'en-US' ) {
-			languageCode = 'en';
+	var refView = $( referenceView ).data( 'referenceview' ),
+		reference = refView.value(),
+		refListView = refView.$listview.data( 'listview' ),
+		snakListView = refListView.items(),
+		slv = snakListView.data( 'snaklistview' ),
+		lv = slv.$listview.data( 'listview' ),
+		usedProperties = reference.getSnaks().getPropertyOrder(),
+		self = this;
+
+	if ( data[0] ) {
+		var addedSnakItem = false;
+
+		$.each( data[0], function( key, val ) {
+			var propertyId = self.getPropertyForCitoidData( key );
+
+			if ( propertyId !== null && usedProperties.indexOf( propertyId ) !== -1 ) {
+				return;
+			}
+
+			switch ( key ) {
+				case 'title':
+					lv.addItem( self.getMonolingualValueSnak(
+						propertyId,
+						val,
+						self.getTitleLanguage( val, data[0] )
+					) );
+
+					addedSnakItem = true;
+
+					break;
+				case 'date':
+				case 'accessDate':
+					lv.addItem( self.getDateSnak(
+						propertyId,
+						val
+					) );
+
+					addedSnakItem = true;
+
+					break;
+				default:
+					break;
+			}
+		} );
+
+		if ( addedSnakItem === true ) {
+			lv.startEditing();
+
+			refView._trigger( 'change' );
 		}
 	}
+};
 
+CiteTool.prototype.getPropertyForCitoidData = function( key ) {
+	if ( this.config.zoteroProperties[key] ) {
+		return this.config.zoteroProperties[key];
+	}
+
+	return null;
+};
+
+CiteTool.prototype.getTitleLanguage = function( title, data ) {
+    var languageCode = mw.config.get( 'wgUserLanguage' );
+
+    if ( data.language ) {
+        if ( data.language === 'en-US' ) {
+            languageCode = 'en';
+        }
+    }
+
+	return languageCode;
+};
+
+CiteTool.prototype.getMonolingualValueSnak = function( propertyId, title, languageCode ) {
 	return new wb.datamodel.PropertyValueSnak(
-		this.config.zoteroProperties.title,
+		propertyId,
 		new dv.MonolingualTextValue( languageCode, title )
 	);
 };
