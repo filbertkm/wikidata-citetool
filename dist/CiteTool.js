@@ -19,6 +19,7 @@ function CiteTool( configUrl ) {
 
 	this.citoidClient = new mw.CitoidClient();
 	this.citeToolReferenceEditor = null;
+	this.citeToolAutofillLinkRenderer = null;
 }
 
 CiteTool.prototype.init = function() {
@@ -27,6 +28,9 @@ CiteTool.prototype.init = function() {
 	if ( !mw.config.exists( 'wbEntityId' ) ) {
 		return;
 	}
+
+	$( '.wikibase-statementview' )
+		.css( { 'border': 'solid 1px blue' } );
 
 	$( '.wikibase-statementview' )
 		.on( 'referenceviewafterstartediting', function( e ) {
@@ -42,19 +46,16 @@ CiteTool.prototype.init = function() {
 };
 
 CiteTool.prototype.getConfig = function() {
-	var self = this,
-		dfd = $.Deferred();
+	var dfd = $.Deferred();
 
 	$.ajax({
-		url: self.configUrl,
+		url: this.configUrl,
 		dataType: 'json',
 		success: function( config ) {
-			self.config = config;
-
 			dfd.resolve( config );
 		},
 		error: function( result ) {
-			console.log( result );
+			console.log( 'Error loading citoid config' );
 		}
 	});
 
@@ -66,8 +67,15 @@ CiteTool.prototype.initAutofillLink = function( target ) {
 
 	if ( this.config === null ) {
 		this.getConfig()
-			.done( function() {
-				self.citeToolReferenceEditor = new wb.CiteToolReferenceEditor( self.config );
+			.done( function( config ) {
+				self.config = config;
+				self.citeToolReferenceEditor = new wb.CiteToolReferenceEditor( config );
+				self.citeToolAutofillLinkRenderer = new wb.CiteToolAutofillLinkRenderer(
+					config,
+					self.citoidClient,
+					self.citeToolReferenceEditor
+				);
+
 				self.checkReferenceAndAddAutofillLink( target );
 			} );
 	} else {
@@ -80,7 +88,7 @@ CiteTool.prototype.checkReferenceAndAddAutofillLink = function( target ) {
 	var reference = this.getReferenceFromView( target );
 
 	if ( reference && this.getLookupSnakProperty( reference ) !== null ) {
-		this.addAutofillLink( target );
+		this.citeToolAutofillLinkRenderer.renderLink( target );
 	}
 };
 
@@ -123,27 +131,85 @@ CiteTool.prototype.getLookupProperties = function() {
 	return properties;
 };
 
-CiteTool.prototype.addAutofillLink = function( referenceView ) {
-	var self = this,
-		$heading = $( referenceView ).find( '.wikibase-referenceview-heading' ),
-		$toolbar = $heading.find( '.wikibase-toolbar-container' );
+wb.CiteTool = CiteTool;
 
-	var $span = $( '<span/>' )
-		.attr({ 'class': 'wikibase-toolbar-button' })
-		.css({ 'margin': '0 .5em' })
-		.append(
-			$( '<a/>' ).text( 'autofill' )
-				.attr({ 'class': 'wikibase-referenceview-autofill' })
-				.on( 'click', function( e ) {
-					e.preventDefault();
-					self.onAutofillClick( e.target );
-				} )
-			);
+}( wikibase, dataValues, mediaWiki, jQuery ) );
 
-	$toolbar.append( $span );
+( function( wb, dv, mw, $ ) {
+
+'use strict';
+
+function CiteToolAutofillLinkRenderer( config, citoidClient, citeToolReferenceEditor ) {
+	this.config = config;
+	this.citoidClient = citoidClient;
+	this.citeToolReferenceEditor = citeToolReferenceEditor;
+}
+
+CiteToolAutofillLinkRenderer.prototype.renderLink = function( referenceView ) {
+    var self = this;
+
+    var $span = $( '<span/>' )
+        .attr({ 'class': 'wikibase-toolbar-button' })
+        .css({ 'margin': '0 .5em' })
+        .append(
+            $( '<a/>' ).text( 'autofill' )
+                .attr({ 'class': 'wikibase-referenceview-autofill' })
+                .on( 'click', function( e ) {
+                    e.preventDefault();
+                    self.onAutofillClick( e.target );
+                } )
+            );
+
+    this.getReferenceToolbarContainer( referenceView ).append( $span );
 };
 
-CiteTool.prototype.onAutofillClick = function( target ) {
+CiteToolAutofillLinkRenderer.prototype.getReferenceFromView = function( referenceView ) {
+	// not a reference view change
+	if ( referenceView === undefined ) {
+		return null;
+	}
+
+	var refView = $( referenceView ).data( 'referenceview' );
+
+	return refView.value();
+};
+
+CiteToolAutofillLinkRenderer.prototype.getLookupSnakProperty = function( reference ) {
+	var snaks = reference.getSnaks(),
+		lookupProperties = this.getLookupProperties(),
+		lookupProperty = null;
+
+	snaks.each( function( k, snak ) {
+		var propertyId = snak.getPropertyId();
+
+		if ( lookupProperties.indexOf( propertyId ) !== -1 ) {
+			if ( lookupProperty === null ) {
+				lookupProperty = propertyId;
+			}
+		}
+	} );
+
+	return lookupProperty;
+};
+
+CiteToolAutofillLinkRenderer.prototype.getLookupProperties = function() {
+	var properties = [];
+
+	if ( this.config.properties ) {
+		properties = Object.keys( this.config.properties );
+	}
+
+	return properties;
+};
+
+CiteToolAutofillLinkRenderer.prototype.getReferenceToolbarContainer = function( referenceView ) {
+	var $heading = $( referenceView ).find( '.wikibase-referenceview-heading' ),
+		$toolbar = $heading.find( '.wikibase-toolbar-container' );
+
+	return $toolbar;
+};
+
+CiteToolAutofillLinkRenderer.prototype.onAutofillClick = function( target ) {
 	var referenceView = $( target ).closest( '.wikibase-referenceview' ),
 		reference = this.getReferenceFromView( referenceView ),
 		self = this;
@@ -165,7 +231,7 @@ CiteTool.prototype.onAutofillClick = function( target ) {
 		} );
 };
 
-CiteTool.prototype.getLookupSnakValue = function( reference ) {
+CiteToolAutofillLinkRenderer.prototype.getLookupSnakValue = function( reference ) {
 	var value = null,
 		lookupProperties = this.getLookupProperties();
 
@@ -180,7 +246,7 @@ CiteTool.prototype.getLookupSnakValue = function( reference ) {
 	return value;
 };
 
-wb.CiteTool = CiteTool;
+wb.CiteToolAutofillLinkRenderer = CiteToolAutofillLinkRenderer;
 
 }( wikibase, dataValues, mediaWiki, jQuery ) );
 
