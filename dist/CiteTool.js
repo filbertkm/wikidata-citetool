@@ -29,16 +29,14 @@ CiteTool.prototype.init = function() {
 		return;
 	}
 
-	$( '.wikibase-statementview' )
-		.css( { 'border': 'solid 1px blue' } );
-
-	$( '.wikibase-statementview' )
+	$( '.wikibase-entityview' )
+		.css( { 'border': 'solid 1px blue' } )
 		.on( 'referenceviewafterstartediting', function( e ) {
 			self.initAutofillLink( e.target );
 		} );
 
 	// @fixme the event also fires for other changes, like editing qualifiers
-	$( '.wikibase-statementview' )
+	$( '.wikibase-entityview' )
 		.on( 'snakviewchange', function( e ) {
 			self.initAutofillLink( e.target );
 		} );
@@ -85,6 +83,10 @@ CiteTool.prototype.initAutofillLink = function( target ) {
 };
 
 CiteTool.prototype.checkReferenceAndAddAutofillLink = function( target ) {
+	if ( $( target ).find( '.wikibase-citetool-autofill' ).length > 0 ) {
+		return;
+	}
+
 	var reference = this.getReferenceFromView( target );
 
 	if ( reference && this.getLookupSnakProperty( reference ) !== null ) {
@@ -149,7 +151,7 @@ CiteToolAutofillLinkRenderer.prototype.renderLink = function( referenceView ) {
     var self = this;
 
     var $span = $( '<span/>' )
-        .attr({ 'class': 'wikibase-toolbar-button' })
+        .attr({ 'class': 'wikibase-toolbar-button wikibase-citetool-autofill' })
         .css({ 'margin': '0 .5em' })
         .append(
             $( '<a/>' ).text( 'autofill' )

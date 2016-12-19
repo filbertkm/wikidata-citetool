@@ -12,7 +12,7 @@ CiteToolAutofillLinkRenderer.prototype.renderLink = function( referenceView ) {
     var self = this;
 
     var $span = $( '<span/>' )
-        .attr({ 'class': 'wikibase-toolbar-button' })
+        .attr({ 'class': 'wikibase-toolbar-button wikibase-citetool-autofill' })
         .css({ 'margin': '0 .5em' })
         .append(
             $( '<a/>' ).text( 'autofill' )
