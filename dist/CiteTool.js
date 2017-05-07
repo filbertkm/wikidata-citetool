@@ -30,7 +30,6 @@ CiteTool.prototype.init = function() {
 	}
 
 	$( '.wikibase-entityview' )
-		.css( { 'border': 'solid 1px blue' } )
 		.on( 'referenceviewafterstartediting', function( e ) {
 			self.initAutofillLink( e.target );
 		} );
@@ -369,18 +368,14 @@ function CitoidClient() {
 }
 
 CitoidClient.prototype.search = function( value ) {
-    var dfd = $.Deferred();
-
+    var dfd = $.Deferred(),
+        baseUrl = 'https://en.wikipedia.org/api/rest_v1/data/citation',
+        format = 'mediawiki',
+        url = baseUrl + '/' + format + '/' + encodeURIComponent(value);
     $.ajax( {
         method: 'GET',
-        url: 'https://citoid.wikimedia.org/api',
-        data: {
-            action: 'query',
-            format: 'mediawiki',
-            search: value,
-            basefields: true,
-            jsonp: true
-        }
+        url: url,
+        data: {}
     } )
     .done( function( citoidData ) {
         dfd.resolve( citoidData );
