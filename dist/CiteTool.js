@@ -259,6 +259,7 @@ function CiteToolReferenceEditor( config ) {
 	this.config = config;
 
 	this.citoidClient = new mw.CitoidClient();
+	this.sparql = new wb.queryService.api.Sparql();
 }
 
 CiteToolReferenceEditor.prototype.addReferenceSnaksFromCitoidData = function( data, referenceView ) {
@@ -298,6 +299,21 @@ CiteToolReferenceEditor.prototype.addReferenceSnaksFromCitoidData = function( da
 				addedSnakItem = true;
 
 				break;
+			case 'ISSN':
+				var queryProperty = self.getQueryPropertyForCitoidData( key );
+
+				self.lookupItemByIdentifier( queryProperty, val )
+					.done( function( itemId ) {
+						console.log( itemId );
+						console.log( propertyId );
+						lv.addItem(
+							self.getWikibaseItemSnak( propertyId, itemId )
+						);
+
+						addedSnakItem = true;
+					} );
+
+				break;
 			default:
 				break;
 		}
@@ -322,6 +338,14 @@ CiteToolReferenceEditor.prototype.getReferenceSnakListView = function( refView )
 CiteToolReferenceEditor.prototype.getPropertyForCitoidData = function( key ) {
 	if ( this.config.zoteroProperties[key] ) {
 		return this.config.zoteroProperties[key];
+	}
+
+	return null;
+};
+
+CiteToolReferenceEditor.prototype.getQueryPropertyForCitoidData = function( key ) {
+	if ( this.config.queryProperties[key] ) {
+		return this.config.queryProperties[key];
 	}
 
 	return null;
@@ -353,6 +377,49 @@ CiteToolReferenceEditor.prototype.getDateSnak = function( propertyId, dateString
 		propertyId,
 		new dv.TimeValue( timestamp )
 	);
+};
+
+CiteToolReferenceEditor.prototype.getWikibaseItemSnak = function( propertyId, itemId ) {
+	return new wb.datamodel.PropertyValueSnak(
+		propertyId,
+		new wb.datamodel.EntityId( itemId )
+	);
+};
+
+CiteToolReferenceEditor.prototype.lookupItemByIdentifier = function( propertyId, value ) {
+	var query = "SELECT ?identifier ?entity "
+		+ "WHERE {  ?entity wdt:" + propertyId + " ?identifier . "
+		+ "FILTER ( ?identifier in ('" + value + "') ) "
+		+ "}";
+
+    var dfd = $.Deferred(),
+        baseUrl = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql';
+
+	$.ajax( {
+        method: 'GET',
+        url: baseUrl,
+        data: {
+			query: query,
+			format: 'json'
+		}
+    } )
+    .done( function( data ) {
+		var uriPattern = /^http:\/\/www.wikidata.org\/entity\/([PQ]\d+)$/;
+
+		console.log( data.results );
+
+		if ( data.results.bindings.length > 0 ) {
+			var result = data.results.bindings[0],
+				uri = result.entity.value,
+				matches = uri.match(uriPattern);
+
+			dfd.resolve( matches[1] );
+		} else {
+			dfd.resolve( false );
+		}
+    } );
+
+    return dfd.promise();
 };
 
 wb.CiteToolReferenceEditor = CiteToolReferenceEditor;
