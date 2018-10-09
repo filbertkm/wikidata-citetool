@@ -10,7 +10,7 @@ The tool works currently as a user script on-wiki.  To enable the script, add so
 ```
 mw.loader.using(['wikibase'], function() {
 	$.getScript( 'https://www.wikidata.org/w/index.php?title=User:Aude/CiteTool.js&action=raw&ctype=text/javascript', function() {
-		var citeTool = new wb.CiteTool( 'https://www.wikidata.org/w/index.php?title=User:Aude/CiteProperties.json&action=raw&ctype=text/javascript' );
+		var citeTool = new wb.CiteTool( 'https://www.wikidata.org/w/index.php?title=User:Aude/CiteProperties.json&action=raw&ctype=application/json' );
 		citeTool.init();
 	});
 });
