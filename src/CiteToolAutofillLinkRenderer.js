@@ -11,17 +11,22 @@ function CiteToolAutofillLinkRenderer( config, citoidClient, citeToolReferenceEd
 CiteToolAutofillLinkRenderer.prototype.renderLink = function( referenceView ) {
     var self = this;
 
+    var options = {
+        templateParams: [
+            'wikibase-citetool-autofill wikibase-referenceview-autofill', // CSS class names
+            '#', // URL
+            'autofill', // Label
+            '' // Title tooltip
+        ],
+        cssClassSuffix: 'autofill'
+    };
+
     var $span = $( '<span/>' )
-        .attr({ 'class': 'wikibase-toolbar-button wikibase-citetool-autofill' })
-        .css({ 'margin': '0 .5em' })
-        .append(
-            $( '<a/>' ).text( 'autofill' )
-                .attr({ 'class': 'wikibase-referenceview-autofill' })
-                .on( 'click', function( e ) {
-                    e.preventDefault();
-                    self.onAutofillClick( e.target );
-                } )
-            );
+        .toolbarbutton( options )
+        .on( 'click', function( e ) {
+            e.preventDefault();
+            self.onAutofillClick( e.target );
+        } );
 
     this.getReferenceToolbarContainer( referenceView ).append( $span );
 };
