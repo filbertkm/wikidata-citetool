@@ -9,7 +9,7 @@ function CitoidClient() {
 CitoidClient.prototype.search = function( value ) {
     var dfd = $.Deferred(),
         baseUrl = 'https://en.wikipedia.org/api/rest_v1/data/citation',
-        format = 'mediawiki',
+        format = 'mediawiki-basefields',
         url = baseUrl + '/' + format + '/' + encodeURIComponent(value);
     $.ajax( {
         method: 'GET',
