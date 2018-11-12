@@ -14,7 +14,7 @@ CiteToolReferenceEditor.prototype.addReferenceSnaksFromCitoidData = function( da
 
 	var refView = $( referenceView ).data( 'referenceview' ),
 		lv = this.getReferenceSnakListView( refView ),
-		usedProperties = refView.value().getSnaks().getPropertyOrder(),
+		// usedProperties = refView.value().getSnaks().getPropertyOrder(),
 		self = this;
 
 	var addedSnakItem = false;
@@ -22,11 +22,19 @@ CiteToolReferenceEditor.prototype.addReferenceSnaksFromCitoidData = function( da
 	$.each( data, function( key, val ) {
 		var propertyId = self.getPropertyForCitoidData( key );
 
-		if ( propertyId !== null && usedProperties.indexOf( propertyId ) !== -1 ) {
+		if ( !propertyId ) {
+			console.log( "PropertyID missing for key: " + key );
 			return;
 		}
 
+		// Allow duplicate properties; i.e. multiple authors
+		// TODO: Exclude identical snaks with same property and value
+		// if ( propertyId !== null && usedProperties.indexOf( propertyId ) !== -1 ) {
+		// 	return;
+		// }
+
 		switch ( key ) {
+			// Monolingual properties
 			case 'title':
 				lv.addItem( self.getMonolingualValueSnak(
 					propertyId,
@@ -37,28 +45,78 @@ CiteToolReferenceEditor.prototype.addReferenceSnaksFromCitoidData = function( da
 				addedSnakItem = true;
 
 				break;
+			// Date properties
 			case 'date':
 			case 'accessDate':
-				lv.addItem(
-					self.getDateSnak( propertyId, val )
-				);
+				try {
+					lv.addItem(
+						self.getDateSnak( propertyId, val )
+					);
 
-				addedSnakItem = true;
+					addedSnakItem = true;
+				} catch ( e ){
+					console.log( e );
+				}
 
 				break;
+			// String properties
 			case 'ISSN':
-				var queryProperty = self.getQueryPropertyForCitoidData( key );
-
-				self.lookupItemByIdentifier( queryProperty, val )
-					.done( function( itemId ) {
-						console.log( itemId );
-						console.log( propertyId );
+			case 'ISBN':
+			case 'PMID':
+			case 'url':
+			case 'pages':
+			case 'issue':
+			case 'volume':
+			case 'numPages':
+			case 'PMCID':
+			case 'DOI':
+				var str = false;
+				if (typeof val === 'string') {
+					str = true;
+					try {
 						lv.addItem(
-							self.getWikibaseItemSnak( propertyId, itemId )
+							self.getStringSnak( propertyId, val )
 						);
-
 						addedSnakItem = true;
-					} );
+					}
+					catch( e ) {
+						console.log(e);
+					}
+				// For array of identifiers, add every one
+				} else if ( Array.isArray( val ) ) {
+					for (var i = 0; i < val.length; i++) {
+						try {
+							lv.addItem(
+								self.getStringSnak( propertyId, val[i] )
+							);
+							addedSnakItem = true;
+						}
+						catch( e ) {
+							console.log(e);
+						}
+					}
+				}
+
+				// Below currently does not work
+				//var queryProperty = self.getQueryPropertyForCitoidData( key );
+
+				// Very hacky - should try every id in Array instead of just first one
+				//if (!str) {
+				//	val = val[0];
+				//}
+				// self.lookupItemByIdentifier( queryProperty, val )
+				// 	.done( function( itemId ) {
+				// 		console.log( itemId );
+				// 		console.log( propertyId );
+				// 		try {
+				// 			if (itemId && propertyId) {
+				// 				lv.addItem(
+				// 					self.getWikibaseItemSnak( propertyId, itemId )
+				// 				);
+				// 				addedSnakItem = true;
+				// 			}
+				// 		} catch( e ) {}
+				// 	} );
 
 				break;
 			default:
@@ -114,6 +172,13 @@ CiteToolReferenceEditor.prototype.getMonolingualValueSnak = function( propertyId
 	return new wb.datamodel.PropertyValueSnak(
 		propertyId,
 		new dv.MonolingualTextValue( languageCode, title )
+	);
+};
+
+CiteToolReferenceEditor.prototype.getStringSnak = function( propertyId, val) {
+	return new wb.datamodel.PropertyValueSnak(
+		propertyId,
+		new dv.StringValue( val )
 	);
 };
 

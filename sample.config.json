@@ -1,23 +1,78 @@
 {
     "properties": {
         "P698": "PubMed ID",
+        "P356": "DOI",
+        "P212": "ISBN",
+        "P957": "ISBN",
         "P854": "reference url"
     },
-    "zoteroProperties": {
+    "zoteroProperties":  {
+        "abstractNote": null,
         "accessDate": "P813",
+        "applicationNumber": null,
+        "archive": null,
+        "archiveLocation": null,
+        "artworkSize": null,
+        "assignee": null,
+        "callNumber": null,
+        "code": null,
+        "committee": null,
+        "company": null,
+        "conferenceName": null,
+        "country": null,
+        "court": null,
         "date": "P577",
-        "title": "P1476"
+        "DOI": "P356",
+        "edition": null,
+        "extra": null,
+        "filingDate": null,
+        "firstPage": null,
+        "genre": null,
+        "history": null,
+        "institution": null,
+        "ISBN": "P212",
+        "ISSN": "P236",
+        "issue": "P433",
+        "issuingAuthority": null,
+        "journalAbbreviation": null,
+        "language": null,
+        "legalStatus": null,
+        "legislativeBody": null,
+        "libraryCatalog": null,
+        "medium": null,
+        "meetingName": null,
+        "number": null,
+        "numberOfVolumes": null,
+        "numPages": "P1104",
+        "oclc": null,
+        "pages": "P304",
+        "place": null,
+        "PMCID": "P932",
+        "PMID": "P698",
+        "priorityNumbers": null,
+        "programmingLanguage": null,
+        "publicationTitle": null,
+        "publisher": null,
+        "references": null,
+        "reporter": null,
+        "rights": null,
+        "runningTime": null,
+        "scale": null,
+        "section": null,
+        "series": null,
+        "seriesNumber": null,
+        "seriesText": null,
+        "seriesTitle": null,
+        "session": null,
+        "shortTitle": null,
+        "system": null,
+        "title": "P1476",
+        "url": "P2699",
+        "version": null,
+        "volume": "P478"
     },
-    "refTypes": {
-        "newspaperArticle": {
-            "title": {
-                "id": "P1476",
-                "valuetype": "monolingualtext"
-            },
-            "url": {
-                "id": "P854",
-                "valuetype": "string"
-            }
-        }
+    "queryProperties": {
+        "DOI": "P356",
+        "ISSN": "P236"
     }
 }
